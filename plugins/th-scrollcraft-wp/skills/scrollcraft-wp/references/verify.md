@@ -14,6 +14,36 @@ Bühne, die nicht klebt, produziert einen tadellosen Kontaktbogen.
 
 ---
 
+## Stand der Prüfungen auf diesem Port
+
+Gemessen am 2026-08-25 gegen WordPress 7.0.4, PHP 8.3, OllieWP 1.6.1 auf
+`staging.tobiasherold.de`, Theme th-swiss.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Sechs Akte kleben, volle Breite, keine tote Strecke | grün |
+| Tokens lösen auf Ollies elf Slugs auf | grün |
+| Hell und dunkel, Drift greift in beiden | grün |
+| Kinetik an Kind, an Container, kanonisch | grün, siehe MOTOR-PATCHES.md |
+| Echter Clip durch encode, Mediathek, Scrub | grün, currentTime steigt monoton |
+| **Editor-Rundlauf, metadata.sc** | **grün, 6 rein, 6 raus, Nutzlast gleich** |
+| **Echtes Gerät, Scrub am Telefon** | **grün, Clip läuft beim Scrollen mit** |
+| Kontrast über echten Bildern | offen, braucht playwright-core |
+| Tastatur-Fokusreihenfolge | offen |
+
+Die zwei fett gesetzten Zeilen sind die, die kein Skript beantworten kann.
+Beide brauchten einen angemeldeten Menschen und ein echtes Telefon.
+
+**Eine Lehre aus dem Gerätetest:** der Testclip war ein `testsrc2` aus ffmpeg,
+also wörtlich ein Testbild. Auf die Frage, ob der Clip läuft, kam sinngemäß
+zurück, da sei nur ein Testbild. Das war eine Aussage über den Inhalt, nicht
+über die Bewegung, und ich hätte es beinahe als Fehler diagnostiziert.
+
+Für den nächsten Gerätetest deshalb einen Clip nehmen, bei dem stehend und
+laufend auf einen Blick zu unterscheiden sind: eine große Zahl, die hochzählt,
+oder ein Balken, der wandert. Nicht ein Muster, das im Standbild genauso
+aussieht wie in Bewegung.
+
 ## Prüfung 1: Überlebt `metadata` den Editor
 
 Die wichtigste Prüfung von allen, weil an ihr die ganze Attribut-Brücke hängt.
