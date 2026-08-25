@@ -189,6 +189,39 @@ body.sc-page .sc-stage > * {
   margin-block: 0;
 }
 
+/* --- 4b. Figuren vor reinem Weiss, ohne Freistellen ----------------------
+   Ein Clip, der vor einer weissen Wand gedreht ist, hat an den Figurkanten
+   Kompressionsflusen. H.264 rechnet harte Kanten gegen Flaechen schlecht, und
+   auf reinweissem Seitengrund sieht man das als grauen Saum um jede Person.
+   Hochwertiger encodieren hilft kaum und kostet Gewicht.
+
+   multiply rechnet Weiss weg. Weiss mal Grund ergibt Grund, dunkle Figur mal
+   Weiss ergibt die Figur, und die Flusen liegen so nah an Weiss, dass sie
+   mitverschwinden. Kein Alphakanal, keine zweite Datei fuer Safari, keine
+   Maske.
+
+   Drei Bedingungen, sonst geht es schief:
+
+   1. Der Grund hinter dem Clip muss hell sein. Auf dunklem Grund wird alles
+      schwarz. Deshalb setzt diese Regel den Grund selbst und verlaesst sich
+      nicht darauf, dass er zufaellig weiss ist.
+   2. Die Figur darf nichts Weisses tragen. Ein weisses Hemd wird durchsichtig.
+      Das gehoert in den Prompt, nicht ins CSS.
+   3. Kein Verlauf ueber dem Clip. Ein Scrim wuerde mitmultipliziert und den
+      Clip abdunkeln statt den Text freizustellen. Auf reinem Weiss braucht
+      dunkler Text ohnehin keinen Scrim.
+
+   isolation: isolate am Akt haelt die Rechnung innerhalb des Akts. Ohne das
+   blendet der Clip gegen alles, was zufaellig darunter liegt, und beim
+   Farbdrift des Seitengrunds saehe man die Figur mitwandern.             */
+.sc-page .sc-akt-cutout {
+  background-color: var(--wp--preset--color--base, #fff);
+  isolation: isolate;
+}
+.sc-page .sc-cutout {
+  mix-blend-mode: multiply;
+}
+
 /* --- 5. Textfarbe innerhalb der Akte -------------------------------------
    theme.json färbt Überschriften und Links als ELEMENT, nicht über Vererbung.
    WordPress schreibt daraus :root :where(h1,h2,h3,h4,h5,h6){color: main}, und
@@ -333,6 +366,20 @@ html.sc-dunkel {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
+}
+
+/* Freigestellte Figuren wollen contain, nicht cover. Der weisse Rand ist bei
+   ihnen kein Verschnitt, sondern die Flaeche, auf der die Figur steht, und
+   cover schneidet bei schmalen Fenstern Koepfe und Fuesse ab.
+
+   Diese Regel MUSS hinter der Buehnenregel darueber stehen. Beide zaehlen
+   (0,3,1): :is() nimmt die Spezifitaet seines staerksten Arguments, und
+   video[data-sc-scrub] ist ein Element plus ein Attribut. Bei Gleichstand
+   gewinnt die spaetere Regel. Weiter oben notiert bleibt object-fit stumm auf
+   cover stehen, und im Screenshot sieht das fast richtig aus, weil 16:9 in
+   16:10 nur wenig beschneidet. Gemessen am 2026-08-26. */
+.sc-page .sc-stage :is(video, img).sc-cutout {
+  object-fit: contain;
 }
 .sc-page video[data-sc-scrub] { opacity: 0; transition: opacity 380ms var(--sc-ease-out); }
 .sc-page .sc-has-clip video[data-sc-scrub] { opacity: 1; }

@@ -190,3 +190,66 @@ Drei Dinge, die das Gewicht drücken, ohne dass es auffällt:
 - **Unter reduzierter Bewegung wird kein Clip geholt.** Das Standbild trägt die
   Szene, die Cues laufen normal weiter. Die Seite ist dort nicht kaputt, sie ist
   leichter.
+
+
+## Figuren vor Weiß, ohne Freistellen
+
+Für einen Swiss-Auftritt die stärkste Bildidee, die es gibt: Menschen als dunkle
+Silhouetten auf reinem Weiß, ohne sichtbaren Videorahmen. Kein Alphakanal, keine
+zweite Datei für Safari, keine Maske.
+
+**Erzeugen.** Die Stil-Präambel wörtlich in jeden Prompt:
+
+> locked-off tripod camera, absolutely no camera movement, no zoom, no handheld
+> drift. Seamless pure white infinity background blown out to paper white, no
+> visible floor line, no shadow cast onto the background. High-key studio
+> lighting, large soft sources from both sides, crisp and even, hard clean edges
+> on the figures. Editorial studio photography, not cinematic. No warm colour
+> grade, no lens flare, no film grain, no vignette, no bokeh. Generous empty
+> white space around the figures. Single continuous take, slow deliberate
+> movement.
+
+Dazu die Kleidung festnageln: **plain dark charcoal clothing, no white or light
+garments**. Ein weißes Hemd wird beim Einblenden durchsichtig.
+
+**Was trotzdem herauskommt.** Kein Modell liefert reines Weiß. Gemessen am
+ersten Clip: Wand 229, Boden 105 von 255. Der Boden ist das Problem, nicht die
+Wand.
+
+**Aufhellen, bis der Raum verschwindet.** Ein Weißpunkt auf den ganzen Clip:
+
+```bash
+ffmpeg -i roh.mp4 -vf "colorlevels=rimin=0:rimax=0.30:gimin=0:gimax=0.30:bimin=0:bimax=0.30" \
+  -c:v libx264 -crf 12 -pix_fmt yuv420p -an weiss.mp4
+```
+
+Den Wert messen, nicht schätzen. Gesucht ist der höchste Wert, bei dem Wand
+**und** Boden auf 255 stehen und die Figuren noch dunkel sind:
+
+| Probe | roh | 0.36 | 0.30 |
+|---|---|---|---|
+| Wand | 229 | 255 | 255 |
+| Boden Mitte | 94 | 249 | **255** |
+| Gesicht | 19 | 48 | 59 |
+| Hand | 112 | 154 | 164 |
+| Sakko | 35 | 67 | 77 |
+
+Danach `encode.sh` wie immer. Der Zwischenschritt läuft mit crf 12, damit die
+zweite Kompression nicht auf einem bereits beschädigten Bild aufsetzt.
+
+**Einbinden.** Zwei Klassen, mehr nicht:
+
+```html
+<div class="wp-block-group alignfull sc-akt-cutout">
+  <img class="sc-stage__poster sc-cutout" src="wp:113" alt="">
+  <video class="sc-cutout" data-sc-scrub data-sc-src="wp:114"></video>
+</div>
+```
+
+`sc-akt-cutout` an den Akt setzt den weißen Grund und isoliert die Rechnung,
+`sc-cutout` an Video und Standbild macht die Multiplikation.
+
+**Grenzen.** Nur auf hellem Grund. Auf dunklem wird alles schwarz. Kein Scrim
+darüber, der würde mitmultipliziert und den Clip abdunkeln, statt den Text
+freizustellen. Und alles Weiße im Bild verschwindet mit: der weiße Tisch im
+ersten Clip war schon roh bei 207 und ist am Ende nur noch als Umriss da.
