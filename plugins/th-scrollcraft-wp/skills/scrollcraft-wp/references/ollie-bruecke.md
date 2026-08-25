@@ -45,6 +45,56 @@ Deshalb stehen die Tokens auf `:root` und nicht auf `.sc-page`. Stünde
 überschrieben, und der Farbverlauf über die Seite bliebe stehen. Das ist keine
 Schlamperei, das ist die Kaskade.
 
+### Der Editor-Rundlauf, einmal gemessen
+
+**Gemessen am 2026-08-25 gegen WordPress 7.0.4, Ergebnis grün.**
+
+Eine Seite mit sechs `metadata.sc`-Blöcken im Block-Editor geöffnet und ohne
+Änderung gespeichert:
+
+| | vorher | nachher |
+|---|---|---|
+| `metadata.sc` | 6 | 6 |
+| Nutzlast je Block | | Zeichen für Zeichen gleich |
+| `wp:106/107/108` in `core/html` | da | da |
+| `data-sc-scrub` | da | da |
+| Länge | 1529 | 1559 |
+
+Die 30 Zeichen mehr sind Normalisierung, keine Verluste. Ein zweites Speichern
+ändert nichts mehr, das Format ist konvergiert. Kein Hin- und Herwandern bei
+jedem Öffnen.
+
+Bemerkenswert: der Editor **ergänzt** das metadata-Objekt um `categories` und
+`patternName`, statt es zu ersetzen. Unser `sc` steht unangetastet daneben.
+Genau darauf ist die Brücke gebaut.
+
+Damit ist die Frage beantwortet, an der der ganze Port hängt. Die Prüfung
+gehört trotzdem einmal je WordPress-Hauptversion wiederholt, mit
+`scripts/editor-rundlauf.sh <id>`.
+
+### Pattern-Verweise überleben das Speichern nicht
+
+Eine Seite, die aus `<!-- wp:pattern {"slug":"..."} /-->` besteht, sieht nach
+dem ersten Speichern im Editor völlig anders aus. Gemessen an derselben Seite:
+
+| | vorher | nachher |
+|---|---|---|
+| `wp:pattern` | 6 | 0 |
+| `metadata.sc` | 0 | 30 |
+| Länge | 430 | 11377 |
+
+Der Editor setzt das Markup der Patterns fest ein. Das ist WordPress-Verhalten
+für unsynchronisierte Patterns und kein Fehler, es hat aber eine Folge, die man
+kennen muss: **danach hängt die Seite nicht mehr an den Pattern-Dateien.** Wer
+später ein Pattern korrigiert, erreicht diese Seite nicht mehr.
+
+Für gebaute Seiten ist das richtig herum. Eine fertige Kundenseite soll sich
+nicht ändern, weil jemand ein Pattern anfasst. Es heißt nur, dass Patterns
+Bausteine für den Aufbau sind und keine dauerhafte Verbindung.
+
+Nachgeprüft: die Seite läuft nach der Umformung unverändert, alle sechs Akte
+bewegen sich, dieselben p-Werte wie vorher.
+
 ### Hell oder dunkel, je Seite
 
 Die Wahl gehört zur Seite, nicht zum Theme. Firmenauftritte werden hell gebaut,
