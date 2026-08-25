@@ -1,0 +1,12 @@
+{
+  "name": "th-scrollcraft-wp",
+  "description": "scrollcraft-wp: scroll-getriebene Landingpages auf einem OllieWP-Blocktheme. Portiert den Motor von Nate Herk nach WordPress: echte Gutenberg-Bloecke statt einer HTML-Datei, Design-Tokens aus theme.json statt eigener Werte, Assets in der Mediathek, Pruefung gegen Staging.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Tobias Herold",
+    "url": "https://github.com/tobbynaish"
+  },
+  "homepage": "https://github.com/tobbynaish/scroll-craft-wp",
+  "repository": "https://github.com/tobbynaish/scroll-craft-wp",
+  "license": "MIT"
+}

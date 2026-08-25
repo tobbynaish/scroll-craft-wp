@@ -1,0 +1,86 @@
+/* ============================================================================
+   Was der Editor von einem Akt zeigt.
+
+   Im Editor wird nicht gescrollt und nichts gepinnt, also kann ein Akt dort
+   unmöglich aussehen wie im Frontend. Der Versuch, es trotzdem zu erzwingen,
+   endet in einer Bühne, die den halben Editor überlagert.
+
+   Stattdessen: den Akt als das zeigen, was er ist. Ein beschrifteter Kasten
+   mit lesbarem Inhalt. Wer weiß, was er vor sich hat, räumt nichts weg.
+   ========================================================================== */
+
+.editor-styles-wrapper [data-sc-act],
+.editor-styles-wrapper .sc-act {
+  position: relative;
+  border: 1px dashed color-mix(in oklab, currentColor 30%, transparent);
+  padding: 2.5rem 1rem 1rem;
+  margin-block: 1.5rem;
+}
+
+.editor-styles-wrapper [data-sc-act]::before,
+.editor-styles-wrapper .sc-act::before {
+  content: "Akt: " attr(data-sc-act) " · " attr(data-sc-span) " Bildschirmhöhen";
+  position: absolute; top: 0; left: 0;
+  padding: 0.25rem 0.6rem;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: color-mix(in oklab, currentColor 12%, transparent);
+}
+
+/* Die Bühne klebt im Editor nicht, sonst verdeckt sie die Werkzeugleiste. */
+.editor-styles-wrapper .sc-stage,
+.editor-styles-wrapper [data-sc-stage] {
+  position: static;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  outline: 1px solid color-mix(in oklab, currentColor 18%, transparent);
+  padding: 1rem;
+}
+
+/* Textebenen liegen im Frontend übereinander. Im Editor untereinander, sonst
+   ist nur die oberste bearbeitbar. */
+.editor-styles-wrapper .sc-copy {
+  position: static;
+  max-width: none;
+  inset: auto;
+  translate: none;
+  text-align: start;
+  margin-block: 1rem;
+}
+
+/* Cues sind im Frontend bei opacity 0 und werden vom Motor aufgeblendet. Im
+   Editor gibt es keinen Motor, also wären sie unsichtbar und jemand würde
+   sie für kaputt halten. */
+.editor-styles-wrapper [data-sc-cue],
+.editor-styles-wrapper [data-sc-in],
+.editor-styles-wrapper [data-sc-copy],
+.editor-styles-wrapper [data-sc-stagger] > * {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+}
+
+/* Eine Weltflug-Bühne ist fixed. Im Editor gäbe das eine Ebene über allem. */
+.editor-styles-wrapper .sc-world,
+.editor-styles-wrapper .sc-world__copy,
+.editor-styles-wrapper [data-sc-world],
+.editor-styles-wrapper [data-sc-world-copy] {
+  position: static;
+  inset: auto;
+}
+.editor-styles-wrapper .sc-world__seg,
+.editor-styles-wrapper [data-sc-segment] {
+  position: relative;
+  inset: auto;
+  opacity: 1;
+  min-height: 8rem;
+  border: 1px dashed color-mix(in oklab, currentColor 25%, transparent);
+  margin-block: 0.75rem;
+}
+.editor-styles-wrapper .sc-world__spacer,
+.editor-styles-wrapper [data-sc-spacer] {
+  display: none;
+}

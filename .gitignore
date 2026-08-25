@@ -26,3 +26,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# scrollcraft-wp: Zugangsdaten, nie committen.
+.scrollcraft-wp.env

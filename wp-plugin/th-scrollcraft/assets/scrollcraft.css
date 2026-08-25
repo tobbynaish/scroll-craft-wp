@@ -1,0 +1,601 @@
+/* ============================================================================
+   scrollcraft.css, Fassung für WordPress-Blockthemes
+   ----------------------------------------------------------------------------
+   Herkunft: engine/scrollcraft.css aus nateherkai/scroll-craft (MIT).
+   Der Geräte-Teil ist Mechanismus und unverändert. Verändert ist alles, was
+   in einer einzelnen HTML-Datei richtig war und in WordPress falsch wäre.
+
+   Drei Unterschiede zum Original, und alle drei sind der Grund, warum ein
+   direkter Kopiervorgang scheitert:
+
+   1. KEIN GLOBALER RESET. Das Original setzt html, body, img, video, button
+      und input zurück. In einem Blocktheme kommen diese Werte aus theme.json,
+      und ein zweiter Satz daneben ist genau das, was die Ollie-Regel verbietet.
+      Alles hier hängt an .sc-page, also an einer Klasse, die das Plugin nur
+      auf Seiten mit Scrollcraft setzt.
+
+   2. DIE TOKENS ZEIGEN AUF OLLIE. --sc-ink ist nicht mehr #f4f2ef, sondern
+      var(--wp--preset--color--main). Wer die Farben der Seite ändert, ändert
+      damit auch die Scroll-Seite. Der Ersatzwert hinter dem Komma greift nur,
+      wenn ein Theme den Slug nicht kennt.
+
+   3. STICKY-RETTUNG. position: sticky stirbt lautlos, sobald irgendein
+      Vorfahr overflow: hidden trägt. In einem Blocktheme sind .wp-site-blocks
+      und .wp-block-post-content genau solche Kandidaten. Der Akt scrollt dann
+      einfach durch, jede Cue rechnet weiter richtig, jeder Screenshot sieht
+      plausibel aus, und niemand findet den Fehler. Deshalb steht die Rettung
+      weit oben und nicht als Fußnote.
+   ========================================================================== */
+
+/* ------------------------------------------------------------- tokens ----- *
+   Auf :root, nicht auf .sc-page. Das ist Absicht: data-sc-drift schreibt
+   --sc-canvas per Inline-Stil auf das html-Element, und ein Inline-Stil
+   schlägt jede Regel. Stünde --sc-canvas zusätzlich auf body, würde der
+   geerbte Driftwert dort wieder überschrieben, und der Farbverlauf über die
+   Seite bliebe stehen. Die Datei lädt ohnehin nur auf Scrollcraft-Seiten.   */
+:root {
+  /* --- Farbrollen. Die sechs hier sind die ganze Marke. ------------------- */
+  --sc-canvas:      var(--wp--preset--color--base, #08090b);
+  --sc-surface:     var(--wp--preset--color--tertiary, #101217);
+  --sc-ink:         var(--wp--preset--color--main, #f4f2ef);
+  --sc-ink-soft:    var(--wp--preset--color--secondary, #9a9ba1);
+  --sc-accent:      var(--wp--preset--color--primary, #d8ff3e);
+  --sc-accent-ink:  var(--wp--preset--color--primary-accent, #08090b);
+
+  --sc-hairline:        var(--wp--preset--color--border-light, color-mix(in oklab, var(--sc-ink) 12%, transparent));
+  --sc-hairline-strong: color-mix(in oklab, var(--sc-ink) 22%, transparent);
+
+  /* --- Schrift. Ollies Slugs, nicht eigene Familien. ---------------------- */
+  --sc-font-display: var(--wp--preset--font-family--primary, system-ui, sans-serif);
+  --sc-font-text:    var(--wp--preset--font-family--primary, system-ui, sans-serif);
+  --sc-font-mono:    var(--wp--preset--font-family--monospace, ui-monospace, monospace);
+
+  /* --- Größen. Kennt das Theme den Slug, gewinnt das Theme. Kennt es ihn
+         nicht, greift die flüssige Leiter aus dem Original. --------------- */
+  --sc-t-xs:   var(--wp--preset--font-size--x-small,  clamp(0.75rem, 0.72rem + 0.15vw, 0.82rem));
+  --sc-t-sm:   var(--wp--preset--font-size--small,    clamp(0.875rem, 0.84rem + 0.18vw, 0.95rem));
+  --sc-t-base: var(--wp--preset--font-size--base,     clamp(1rem, 0.96rem + 0.22vw, 1.125rem));
+  --sc-t-lg:   var(--wp--preset--font-size--medium,   clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem));
+  --sc-t-xl:   var(--wp--preset--font-size--large,    clamp(1.6rem, 1.35rem + 1.2vw, 2.25rem));
+  --sc-t-2xl:  var(--wp--preset--font-size--x-large,  clamp(2.1rem, 1.6rem + 2.4vw, 3.4rem));
+  --sc-t-3xl:  var(--wp--preset--font-size--xx-large, clamp(2.8rem, 1.9rem + 4.2vw, 5rem));
+  --sc-t-4xl:  var(--wp--preset--font-size--xxx-large, clamp(3.4rem, 1.9rem + 6.6vw, 7.5rem));
+
+  --sc-track-tight:  -0.035em;
+  --sc-track-snug:   -0.02em;
+  --sc-track-normal: -0.005em;
+  --sc-track-wide:    0.08em;
+
+  --sc-leading-none: 0.94;
+  --sc-leading-tight: 1.06;
+  --sc-leading-body: 1.62;
+
+  --sc-measure: 62ch;
+
+  /* --- Abstand. 4px-Basis für das Innenleben eines Akts. ------------------ */
+  --sc-1: 0.25rem;  --sc-2: 0.5rem;   --sc-3: 0.75rem;  --sc-4: 1rem;
+  --sc-5: 1.5rem;   --sc-6: 2rem;     --sc-7: 3rem;     --sc-8: 4rem;
+  --sc-9: 6rem;     --sc-10: 8rem;    --sc-11: 12rem;
+
+  /* Der Seitenrhythmus kommt aus theme.json, sonst hat die Scroll-Seite
+     einen anderen Takt als der Rest der Website. */
+  --sc-section: var(--wp--preset--spacing--xx-large, clamp(4.5rem, 9vw, 11rem));
+  --sc-gutter:  var(--wp--style--root--padding-left, clamp(1.25rem, 5vw, 5.5rem));
+  --sc-maxw:    var(--wp--style--global--wide-size, 82rem);
+
+  /* --- Radius. Auf einem Swiss-Auftritt sind alle vier 0. ----------------- */
+  --sc-r-sm: 6px;  --sc-r-md: 12px;  --sc-r-lg: 20px;  --sc-r-pill: 999px;
+
+  /* --- Höhe. Jeder Schatten hat Versatz und Weichzeichnung. --------------- */
+  --sc-shadow-color: 220 40% 2%;
+  --sc-e1: 0 1px 2px hsl(var(--sc-shadow-color) / 0.28),
+           0 2px 6px -1px hsl(var(--sc-shadow-color) / 0.20);
+  --sc-e2: 0 2px 4px hsl(var(--sc-shadow-color) / 0.24),
+           0 8px 18px -4px hsl(var(--sc-shadow-color) / 0.30);
+  --sc-e3: 0 4px 8px hsl(var(--sc-shadow-color) / 0.22),
+           0 18px 40px -8px hsl(var(--sc-shadow-color) / 0.38),
+           0 48px 90px -24px hsl(var(--sc-shadow-color) / 0.30);
+  --sc-edge: inset 0 1px 0 color-mix(in oklab, var(--sc-ink) 10%, transparent);
+
+  /* --- Bewegung. ---------------------------------------------------------- */
+  --sc-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --sc-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --sc-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --sc-d-fast: 160ms;  --sc-d-base: 240ms;  --sc-d-slow: 420ms;
+
+  --sc-z-stage: 1; --sc-z-copy: 20; --sc-z-chrome: 60;
+
+  /* Wie weit oben die Bühne klebt. 0 heißt: Seitenvorlage ohne Kopfbereich,
+     und das ist die empfohlene Bauweise. Wer den klebenden Ollie-Kopf behält,
+     setzt hier dessen Höhe ein, sonst liegt der Kopf über der Bühne. */
+  --sc-top: 0px;
+}
+
+/* ==================================================== WordPress-Anpassung ==
+   Alles unter dieser Linie existiert nur, weil die Seite in einem Blocktheme
+   steht. In Nates Einzeldatei gibt es nichts davon.                         */
+
+/* --- 1. Die Sticky-Rettung ------------------------------------------------
+   overflow: hidden auf einem Vorfahr macht diesen zum Scroll-Container, und
+   position: sticky klebt dann an einem Container, der selbst nicht scrollt.
+   Ergebnis: der Akt scrollt durch, ohne dass irgendetwas nach Fehler aussieht.
+
+   overflow: clip hat dieses Problem nicht, weil es keinen Scroll-Container
+   erzeugt. Deshalb clip statt hidden, überall.                             */
+body.sc-page,
+body.sc-page .wp-site-blocks,
+body.sc-page .wp-block-post-content,
+body.sc-page .entry-content,
+body.sc-page > main,
+body.sc-page main.wp-block-group {
+  overflow: visible;
+}
+body.sc-page { overflow-x: clip; }
+
+/* Ein Akt darf keinen Vorfahr mit Transform, Filter oder Perspective haben,
+   die erzeugen einen neuen Containing Block und heben sticky ebenfalls auf. */
+body.sc-page :is(.wp-site-blocks, .wp-block-post-content, main) {
+  transform: none;
+  filter: none;
+  perspective: none;
+}
+
+/* --- 2. Grund und Schrift der Seite --------------------------------------
+   theme.json schreibt :root :where(body){...}, Spezifität 0-1-0. body.sc-page
+   ist 0-1-1 und gewinnt ohne !important. --sc-canvas wird von data-sc-drift
+   am html-Element gesetzt und hierher vererbt.                             */
+body.sc-page {
+  background-color: var(--sc-canvas);
+  color: var(--sc-ink);
+  transition: background-color 120ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  body.sc-page { transition: none; }
+}
+
+/* Sanftes Springen bei Ankerzielen, ohne es global zu erzwingen. */
+html:has(body.sc-page) { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(body.sc-page) { scroll-behavior: auto; }
+}
+
+/* --- 3. Volle Breite ------------------------------------------------------
+   Ein Akt ist immer alignfull. Ohne das klemmt ihn das constrained-Layout auf
+   Contentbreite, und eine Bühne, die 100vh hoch und 60rem breit ist, ist ein
+   Kasten, keine Bühne.
+
+   Zusätzlich nimmt WordPress bei useRootPaddingAwareAlignments jedem
+   alignfull-Element den Seitenrand wieder als padding hinein. Für eine
+   Vollbild-Bühne ist das falsch: das Bild soll bis an den Rand, die Textebene
+   hält ihren Abstand selbst über --sc-gutter.                              */
+body.sc-page .has-global-padding > .sc-act.alignfull,
+body.sc-page .has-global-padding > .alignfull.sc-act {
+  padding-inline: 0;
+}
+body.sc-page .sc-act {
+  margin-block: 0;
+}
+/* Auch ohne alignfull nicht auf Contentbreite klemmen. Die Regel greift nur,
+   wenn jemand die Ausrichtung im Editor versehentlich entfernt hat. */
+body.sc-page .is-layout-constrained > .sc-act:not(.alignfull) {
+  max-width: none;
+}
+
+/* --- 4. Ollies Blockabstand aus den Akten heraushalten --------------------
+   .is-layout-flow > * + * bekommt margin-block-start aus blockGap. Innerhalb
+   einer Bühne sind alle Kinder absolut positioniert, der Abstand tut dort
+   nichts, aber in der Textebene verschiebt er die Cues gegen ihre Position. */
+body.sc-page .sc-stage > * {
+  margin-block: 0;
+}
+
+/* --- 5. Textfarbe innerhalb der Akte -------------------------------------
+   theme.json färbt Überschriften und Links als ELEMENT, nicht über Vererbung.
+   WordPress schreibt daraus :root :where(h1,h2,h3,h4,h5,h6){color: main}, und
+   eine solche Regel schlägt jedes geerbte color von body.
+
+   Auf hellem Grund fällt das nicht auf, weil --sc-ink ohnehin main ist. Auf
+   dunklem Grund bleibt die Überschrift dann schwarz auf schwarz, während der
+   Rest der Seite korrekt umschaltet. Gemessen am 2026-08-25 auf th-swiss.
+
+   :where() hält die Spezifität bei null, damit jede echte Farbentscheidung im
+   Editor gewinnt. Die has-*-color-Klassen von WordPress kommen ohnehin mit
+   !important und sind hier nie in Gefahr. */
+.sc-page :is(.sc-act, .sc-world__copy) :where(h1, h2, h3, h4, h5, h6),
+.sc-page :where(.sc-display, .sc-lede) {
+  color: var(--sc-ink);
+}
+.sc-page :is(.sc-act, .sc-world__copy) :where(a):not(.wp-element-button) {
+  color: inherit;
+}
+
+/* --- 6. Browser-Oberflächen, aber nur auf dieser Seite -------------------- */
+body.sc-page ::selection { background: var(--sc-accent); color: var(--sc-accent-ink); }
+body.sc-page { caret-color: var(--sc-accent); accent-color: var(--sc-accent); }
+body.sc-page :focus-visible {
+  outline: 2px solid var(--sc-accent);
+  outline-offset: 3px;
+}
+body.sc-page :where(.sc-stage, .sc-copy) :is(img, video, canvas, svg) {
+  display: block;
+  max-width: 100%;
+}
+body.sc-page :where(table, .sc-nums, [data-sc-count]) { font-variant-numeric: tabular-nums; }
+
+/* ======================================================== Typografie ====== *
+   Hilfsklassen, keine Komponenten. Wer sie nicht benutzt, verliert nichts.  */
+.sc-page .sc-display {
+  font-family: var(--sc-font-display);
+  font-weight: 500;
+  line-height: var(--sc-leading-none);
+  letter-spacing: var(--sc-track-tight);
+  text-wrap: balance;
+  margin: 0;
+}
+.sc-page .sc-display--xl { font-size: var(--sc-t-4xl); }
+.sc-page .sc-display--lg { font-size: var(--sc-t-3xl); }
+.sc-page .sc-display--md { font-size: var(--sc-t-2xl); letter-spacing: var(--sc-track-snug); }
+.sc-page .sc-lede {
+  font-size: var(--sc-t-lg);
+  line-height: 1.44;
+  letter-spacing: var(--sc-track-snug);
+  color: var(--sc-ink);
+  max-width: 46ch;
+  text-wrap: pretty;
+  margin: 0;
+}
+.sc-page .sc-body { max-width: var(--sc-measure); color: var(--sc-ink-soft); text-wrap: pretty; margin: 0; }
+.sc-page .sc-label {
+  font-family: var(--sc-font-mono);
+  font-size: var(--sc-t-xs);
+  letter-spacing: var(--sc-track-wide);
+  text-transform: uppercase;
+  color: var(--sc-ink-soft);
+}
+.sc-page .sc-wrap { width: 100%; max-width: var(--sc-maxw); margin-inline: auto; padding-inline: var(--sc-gutter); }
+.sc-page .sc-section { padding-block: var(--sc-section); }
+.sc-page .sc-stack > * + * { margin-top: var(--sc-4); }
+.sc-page .sc-stack > :is(h1,h2,h3) { margin-top: var(--sc-7); }
+.sc-page .sc-stack > :is(h1,h2,h3):first-child { margin-top: 0; }
+.sc-page .sc-rule { height: 1px; border: 0; background: var(--sc-hairline); margin: 0; }
+
+/* ------------------------------------------------------------ dunkler Grund --
+   Kein zweites Farbsystem, nur die Rollen getauscht: Kontrastfarbe wird Grund,
+   Grundfarbe wird Text. Es bleiben dieselben elf Ollie-Slugs.
+
+   --sc-accent und --sc-accent-ink werden NICHT getauscht. Das Theme hat diese
+   beiden als Paar gewählt (auf th-swiss Rot mit Weiß darauf), und das Paar
+   stimmt auf hellem wie auf dunklem Grund. Wer hier --sc-accent-ink auf die
+   Kontrastfarbe dreht, bekommt Schwarz auf Rot.
+
+   AN HTML, NICHT AN BODY. data-sc-drift schreibt --sc-canvas als Inline-Stil
+   auf das html-Element. Stünde die Palette auf body, würde sie den geerbten
+   Driftwert wieder überschreiben, weil body das nähere Element ist, und der
+   Farbverlauf über die Seite bliebe stehen. Am html-Element gewinnt der
+   Inline-Stil, und ohne Drift greift die Palette. Das Plugin setzt die Klasse
+   über den language_attributes-Filter, gesteuert vom Beitragsmeta
+   _th_scrollcraft_grund.                                                     */
+html.sc-dunkel {
+  --sc-canvas:   var(--wp--preset--color--main, #08090b);
+  --sc-surface:  var(--wp--preset--color--main-accent, #101217);
+  --sc-ink:      var(--wp--preset--color--base, #f4f2ef);
+  --sc-ink-soft: color-mix(in oklab, var(--wp--preset--color--base, #fff) 62%, transparent);
+  /* border-light ist auf einem hellen Theme eine dunkle Transparenz und auf
+     schwarzem Grund unsichtbar. Also aus der Textfarbe ableiten. */
+  --sc-hairline:        color-mix(in oklab, var(--sc-ink) 16%, transparent);
+  --sc-hairline-strong: color-mix(in oklab, var(--sc-ink) 28%, transparent);
+  /* Schatten auf dunklem Grund brauchen mehr Schwärze, sonst sieht man sie
+     nicht. Der Farbton bleibt der der Fläche. */
+  --sc-shadow-color: 220 40% 0%;
+}
+
+/* Ein einzelner dunkler Akt in einer hellen Seite. Für die eine Aussage, die
+   sich vom Rest absetzen soll.
+
+   Nicht mit data-sc-drift am selben Akt kombinieren: der Drift schreibt auf
+   html, diese Regel auf den Akt, und der Akt gewinnt für alles in ihm. Das
+   ist hier gewollt, sieht aber wie ein kaputter Drift aus, wenn man es nicht
+   weiß. */
+.sc-page .sc-dark {
+  --sc-canvas:   var(--wp--preset--color--main, #08090b);
+  --sc-surface:  var(--wp--preset--color--main-accent, #101217);
+  --sc-ink:      var(--wp--preset--color--base, #f4f2ef);
+  --sc-ink-soft: color-mix(in oklab, var(--wp--preset--color--base, #fff) 62%, transparent);
+  --sc-hairline: color-mix(in oklab, var(--sc-ink) 16%, transparent);
+  background-color: var(--sc-canvas);
+  color: var(--sc-ink);
+}
+
+/* Umgekehrt: eine helle Insel in einer dunklen Seite. Dieselbe Mechanik. */
+.sc-page .sc-light {
+  --sc-canvas:   var(--wp--preset--color--base, #fff);
+  --sc-surface:  var(--wp--preset--color--tertiary, #f3f1ec);
+  --sc-ink:      var(--wp--preset--color--main, #000);
+  --sc-ink-soft: var(--wp--preset--color--secondary, #4a4a4a);
+  --sc-hairline: var(--wp--preset--color--border-light, color-mix(in oklab, var(--sc-ink) 16%, transparent));
+  background-color: var(--sc-canvas);
+  color: var(--sc-ink);
+}
+
+/* =============================================================== DEVICES ==
+   Ab hier Mechanismus. Nicht nach Geschmack umstylen, eigenes Markup stylen. */
+
+.sc-page .sc-act--pinned { position: relative; }
+.sc-page .sc-stage {
+  position: sticky; top: var(--sc-top);
+  height: 100vh; height: calc(100svh - var(--sc-top));
+  overflow: clip;
+  z-index: var(--sc-z-stage);
+}
+
+/* scrub / sequence */
+.sc-page .sc-stage :is(video[data-sc-scrub], canvas[data-sc-sequence], .sc-stage__poster) {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.sc-page video[data-sc-scrub] { opacity: 0; transition: opacity 380ms var(--sc-ease-out); }
+.sc-page .sc-has-clip video[data-sc-scrub] { opacity: 1; }
+.sc-page video[data-sc-scrub].sc-has-clip { opacity: 1; }
+/* Das Standbild ist Bildhalter, kein Platzhalter: es bleibt stehen, bis ein
+   echtes Videobild gemalt wurde. Ohne das blitzt auf iOS eine leere Bühne. */
+.sc-page .sc-stage__poster { z-index: 0; transition: opacity 380ms var(--sc-ease-out); }
+.sc-page .sc-has-clip .sc-stage__poster { opacity: 0; }
+
+/* Verlauf nur dort, wo Text steht. Eine ganzflächige Abdunklung repariert den
+   Kontrast in einer Ecke und flacht das Bild überall ab. */
+.sc-page .sc-scrim {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: linear-gradient(
+    var(--sc-scrim-angle, 180deg),
+    color-mix(in oklab, var(--sc-canvas) var(--sc-scrim-a, 78%), transparent) 0%,
+    color-mix(in oklab, var(--sc-canvas) 30%, transparent) 42%,
+    transparent 68%);
+}
+.sc-page .sc-scrim--bottom { --sc-scrim-angle: 0deg; }
+.sc-page .sc-scrim--left   { --sc-scrim-angle: 90deg; }
+.sc-page .sc-scrim--right  { --sc-scrim-angle: 270deg; }
+.sc-page .sc-scrim--lead {
+  background: linear-gradient(to top right,
+    color-mix(in oklab, var(--sc-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--sc-canvas) 72%, transparent) 30%,
+    color-mix(in oklab, var(--sc-canvas) 30%, transparent) 52%,
+    transparent 72%);
+}
+.sc-page .sc-scrim--trail {
+  background: linear-gradient(to top left,
+    color-mix(in oklab, var(--sc-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--sc-canvas) 72%, transparent) 30%,
+    color-mix(in oklab, var(--sc-canvas) 30%, transparent) 52%,
+    transparent 72%);
+}
+.sc-page .sc-scrim--band {
+  background: linear-gradient(to top,
+    color-mix(in oklab, var(--sc-canvas) 94%, transparent) 0%,
+    color-mix(in oklab, var(--sc-canvas) 74%, transparent) 22%,
+    color-mix(in oklab, var(--sc-canvas) 30%, transparent) 42%,
+    transparent 58%);
+}
+.sc-page .sc-scrim--vignette {
+  background: radial-gradient(120% 90% at 50% 45%, transparent 40%,
+              color-mix(in oklab, var(--sc-canvas) 70%, transparent) 100%);
+}
+
+/* Text über einer Bühne.
+   max-width in rem, nie in ch: ein ch löst hier gegen die Schriftgröße des
+   Containers auf, nicht gegen die der Überschrift darin. */
+.sc-page .sc-copy {
+  position: absolute; z-index: var(--sc-z-copy);
+  inset-inline: var(--sc-gutter);
+  max-width: min(46rem, 76vw);
+  will-change: opacity, transform;
+}
+.sc-page .sc-copy--lead   { left: var(--sc-gutter); bottom: clamp(3rem, 12vh, 9rem); }
+/* inset-inline zuerst. Es ist die Kurzform für left und right, also setzt es
+   ein danach notiertes left wieder auf auto. */
+.sc-page .sc-copy--center { inset-inline: auto; left: 50%; top: 50%; translate: -50% -50%; text-align: center; }
+.sc-page .sc-copy--trail  { inset-inline: auto; right: var(--sc-gutter); bottom: clamp(3rem, 12vh, 9rem); text-align: right; }
+
+/* Cue-Ausgangszustand, damit vor dem ersten read() nichts aufblitzt. */
+.sc-page [data-sc-cue] { opacity: 0; will-change: opacity, transform; }
+.sc-ready .sc-page [data-sc-cue],
+.sc-page.sc-ready [data-sc-cue] { transition: none; }
+
+/* kinetische Zerlegung */
+.sc-page .sc-split { display: inline-block; overflow: hidden; vertical-align: top; }
+/* Unterlängen liegen unter der Grundlinie. Eine auf die Zeilenbox geklemmte
+   Maske frisst die Schwänze von g, y, p, j. Das Polster holt sie zurück. */
+.sc-page .sc-split--line { display: block; padding-bottom: 0.14em; margin-bottom: -0.14em; }
+.sc-page .sc-split__i { display: inline-block; will-change: transform, opacity; }
+.sc-page .sc-is-split { opacity: 1 !important; }
+
+/* waagerechte Schiene */
+.sc-page [data-sc-pan] { display: flex; will-change: transform; }
+
+/* Aufdecken und Parallaxe */
+.sc-page [data-sc-reveal] { will-change: clip-path; }
+.sc-page [data-sc-parallax] { will-change: transform; }
+
+/* Fluss-Reveal, feuert einmal */
+.sc-page [data-sc-in], .sc-page [data-sc-stagger] > * {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 620ms var(--sc-ease-out), transform 620ms var(--sc-ease-out);
+}
+.sc-page [data-sc-in].sc-in, .sc-page [data-sc-stagger] > .sc-in { opacity: 1; transform: none; }
+
+/* Zeigergeräte */
+.sc-page [data-sc-tilt] { transform-style: preserve-3d; will-change: transform; }
+.sc-page [data-sc-magnet] { will-change: transform; }
+/* isolation immer, position nur wenn nichts Genaueres es schon gesetzt hat.
+   Mit :where() geschrieben, damit ein position: relative hier nicht mit
+   .sc-stage um dieselbe Spezifität ringt und die Bühne das Kleben verliert. */
+.sc-page [data-sc-spotlight] { isolation: isolate; }
+.sc-page :where([data-sc-spotlight]) { position: relative; }
+.sc-page [data-sc-spotlight]::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: radial-gradient(
+    28rem 28rem at calc(var(--sc-mx, 0.5) * 100%) calc(var(--sc-my, 0.5) * 100%),
+    color-mix(in oklab, var(--sc-accent) 16%, transparent), transparent 70%);
+  opacity: 0; transition: opacity var(--sc-d-slow) var(--sc-ease-out);
+}
+.sc-page [data-sc-spotlight]:hover::after { opacity: 1; }
+
+/* =========================================================== WORLDFLIGHT ==
+   Eine feste Bühne für die ganze Seite. Im Dokumentfluss steht nur der
+   Platzhalter. In WordPress kommt eine Bedingung dazu: die Seitenvorlage darf
+   weder Kopf- noch Fußbereich mitbringen, sonst scrollt ein echter Block über
+   die feste Bühne, und genau die Naht soll dieser Modus vermeiden.         */
+
+.sc-page [data-sc-mode="worldflight"] { position: relative; }
+
+.sc-page .sc-world {
+  position: fixed; inset: 0;
+  overflow: clip;
+  z-index: var(--sc-z-stage);
+  background: var(--sc-canvas);
+}
+.sc-page .sc-world__seg {
+  position: absolute; inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+.sc-page .sc-world__seg > :is(video, img, canvas) {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.sc-page .sc-world__poster {
+  z-index: 0;
+  transform-origin: 50% 50%;
+  transition: opacity 420ms var(--sc-ease-out);
+}
+.sc-page .sc-world__seg > video { z-index: 1; }
+.sc-page .sc-world__seg.sc-has-clip .sc-world__poster { opacity: 0; }
+
+.sc-page .sc-world__copy {
+  position: fixed; inset: 0;
+  z-index: var(--sc-z-copy);
+  pointer-events: none;
+}
+.sc-page .sc-world__scrim { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.sc-page [data-sc-copy] {
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.sc-page .sc-world__spacer { pointer-events: none; }
+
+/* Fortschrittsbalken */
+.sc-page [data-sc-progress] {
+  position: fixed; inset: var(--sc-top) 0 auto 0; height: 2px; z-index: var(--sc-z-chrome);
+  background: var(--sc-accent); transform-origin: 0 50%; transform: scaleX(0);
+  will-change: transform;
+}
+
+/* Korn. Hält einen dunklen Grund vom Streifen ab. */
+.sc-page .sc-grain { position: fixed; inset: 0; pointer-events: none; z-index: 3; opacity: 0.045; }
+.sc-page .sc-grain::before {
+  content: ""; position: absolute; inset: -50%;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+}
+
+/* ---------------------------------------------------- reduzierte Bewegung -- */
+@media (prefers-reduced-motion: reduce) {
+  .sc-page [data-sc-in], .sc-page [data-sc-stagger] > * { transform: none; transition-duration: 220ms; }
+  .sc-page [data-sc-parallax], .sc-page [data-sc-pan], .sc-page .sc-split__i { transform: none !important; }
+  .sc-page [data-sc-reveal] { clip-path: none !important; }
+  /* Die Verschiebung einer Schiene IST ihre Navigation. Sie auf null zu
+     setzen parkt den Akt auf dem ersten Bildschirm und macht alles dahinter
+     unerreichbar. Also wird sie als gewöhnlicher Scrollbereich zurückgegeben. */
+  .sc-page [data-sc-act="pan"] .sc-stage,
+  .sc-page [data-sc-act="pan"] [data-sc-stage] {
+    overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+  .sc-page [data-sc-pan] > * { scroll-snap-align: center; }
+  .sc-page [data-sc-spotlight]::after { display: none; }
+  .sc-page .sc-world__poster, .sc-page [data-sc-copy] { transform: none !important; }
+}
+
+/* ------------------------------------------------------------------ mobil -- */
+@media (max-width: 860px) {
+  .sc-page .sc-copy { inset-inline: var(--sc-gutter); max-width: none; }
+  .sc-page .sc-copy--trail { text-align: left; }
+  .sc-page .sc-stage { height: calc(100svh - var(--sc-top)); }
+  /* .sc-copy--trail rutscht hier nach links und über die volle Breite. Ein
+     Verlauf in der rechten unteren Ecke dunkelt dann genau die Ecke ab, die
+     der Text gerade verlassen hat. Also dasselbe Band wie .sc-scrim--band. */
+  .sc-page .sc-scrim--trail {
+    background: linear-gradient(to top,
+      color-mix(in oklab, var(--sc-canvas) 94%, transparent) 0%,
+      color-mix(in oklab, var(--sc-canvas) 74%, transparent) 22%,
+      color-mix(in oklab, var(--sc-canvas) 30%, transparent) 42%,
+      transparent 58%);
+  }
+}
+
+/* ========================================================= Baustein-Ebene ==
+   Hier weicht diese Fassung bewusst vom Original ab.
+
+   Nates Stildatei liefert absichtlich keine Komponenten, weil eine Stildatei
+   mit Karten- und Pillen-Klassen dafür sorgt, dass jede Seite darauf gleich
+   aussieht. Das Argument stimmt. Es stimmt aber nur für eine Einzeldatei, in
+   der jemand danach ohnehin eigenes CSS schreibt.
+
+   In WordPress kommen die Bausteine als Patterns aus dem Inserter, und ein
+   Pattern, das ohne begleitendes CSS zerfällt, ist kein Baustein, sondern ein
+   Zettel. Also steht hier das Nötigste: Maße und Fluss, kein Aussehen. Keine
+   Farbe, kein Rahmen, kein Schatten, keine Rundung. Was gestaltet werden soll,
+   wird im Child-Theme gestaltet.                                            */
+
+/* Waagerechte Schiene. display:flex setzt der Motor über [data-sc-pan] schon,
+   hier kommen nur Höhe, Abstand und die Breite der Karten dazu. */
+.sc-page .sc-rail {
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  height: 100%;
+  padding-inline: var(--sc-gutter);
+}
+.sc-page .sc-rail__lead { flex: 0 0 min(28rem, 72vw); }
+.sc-page .sc-rail__item { flex: 0 0 min(24rem, 66vw); }
+.sc-page .sc-rail__item > * + * { margin-top: var(--sc-4); }
+
+/* Ein Pin-Akt, in dem Aussagen übereinander liegen. Die Textebenen sind
+   absolut positioniert, die Bühne braucht nur eine Mitte.
+
+   Die Höhe steht bewusst NICHT hier. Diese Klassen sitzen in den Patterns am
+   selben Element wie die Bühne, und .sc-stage hat dieselbe Spezifität. Weil
+   dieser Abschnitt später in der Datei steht, hätte height: 100% gewonnen und
+   die Bühne wäre so hoch geworden wie der ganze Akt. Damit klebt sie zwar
+   technisch, aber sie hat keinen Weg mehr zu kleben, und der Pin fällt aus,
+   ohne dass es irgendwo nach Fehler aussieht. Gemessen am 2026-08-25:
+   Bühnenhöhe 3060 statt 900. */
+.sc-page .sc-argument,
+.sc-page .sc-close {
+  display: grid;
+  place-items: center;
+}
+/* Nur wenn die Klasse INNERHALB einer Bühne sitzt statt an ihr. */
+.sc-page .sc-argument:not(.sc-stage),
+.sc-page .sc-close:not(.sc-stage) {
+  height: 100%;
+}
+
+/* Kennzahlen. Ein Raster, das auf dem Telefon untereinander steht. */
+.sc-page .sc-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: clamp(2rem, 5vw, 5rem);
+  width: min(100%, var(--sc-maxw));
+}
+.sc-page .sc-figure > * + * { margin-top: var(--sc-2); }
+
+/* Eine Bühne ohne Bild braucht trotzdem einen Grund, sonst scheint der
+   vorherige Akt durch. */
+.sc-page .sc-argument,
+.sc-page .sc-close,
+.sc-page .sc-rail-stage {
+  background-color: var(--sc-canvas);
+}

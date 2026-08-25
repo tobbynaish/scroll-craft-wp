@@ -1,154 +1,162 @@
-# scrollcraft
+# scroll-craft-wp
 
-**A Claude Code skill that builds premium, scroll-driven websites, and holds them to a real design standard.**
+Scrollcraft für WordPress-Blockthemes. Fork von
+[nateherkai/scroll-craft](https://github.com/nateherkai/scroll-craft), angepasst
+auf [OllieWP](https://olliewp.com).
 
-Most AI website output fails in one of two directions. It is either well behaved and forgettable, or it is a flashy scroll animation with 2.1:1 body text, a headline that wraps to six lines on a phone, and the same six sections every other AI page has. scrollcraft is built to fail neither way: it treats **interaction** and **craft** as one job rather than two.
+Scroll wird zur Zeitachse: Video läuft Bild für Bild unter dem Mausrad,
+Abschnitte kleben und blättern weiter, Schienen fahren seitlich, Überschriften
+bauen sich Zeile für Zeile auf, der Seitengrund wandert die Farbe.
 
-[![MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
-[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](https://code.claude.com/docs/en/plugins)
-
----
-
-## Three builds, three completely different pages
-
-Same skill, same engine, no shared skeleton. The differences below are not themes: they are different page grammars, different navigation models, different endings.
-
-### Orrery · a travel practice
-One unbroken world. The whole page is a single fixed stage: you fall into a handmade scale model of the Earth, land in Kyoto, cross to Patagonia and the Sahara, and rise back to the workbench you started on. No section boundaries anywhere.
-
-![Orrery, a continuous-world scroll flight](media/orrery.webp)
-
-### PERKFORM · a protein coffee
-A filmic one-shot that hard-cuts to two full-bleed inverted grounds mid-page. Loud, product-forward, and the only one of the three that raises its voice.
-
-![PERKFORM, a filmic one-shot product page](media/perkform.webp)
-
-### Fallowbank · a landscape design-build studio
-Quiet, documentary, restrained. Museum-label copy over real photography, and a close that is a line of running text rather than a button.
-
-![Fallowbank, a restrained documentary page](media/fallowbank.webp)
+Der Unterschied zum Original in einem Satz: **hier entsteht keine HTML-Datei,
+sondern eine echte WordPress-Seite aus Gutenberg-Blöcken, die ihre Farben,
+Schriften und Abstände aus `theme.json` erbt.**
 
 ---
 
-## What it actually does
+## Was im Fork drin ist
 
-**Interaction, engagement, and being unrepeatable**
+| | |
+|---|---|
+| `plugins/th-scrollcraft-wp/` | Der Claude-Skill `scrollcraft-wp`, auf Deutsch, mit den WordPress-Phasen |
+| `wp-plugin/th-scrollcraft/` | Das WordPress-Plugin: Motor, Attribut-Brücke, Bausteine |
+| `plugins/nateherk-design/` | Nates Original, unverändert. Referenz beim Abgleich mit dem Upstream |
+| `README-upstream.md` | Nates ursprüngliche Anleitung |
 
-- **Scroll is the timeline.** Video scrubs frame by frame under the wheel, sections pin while their argument advances, rails pan sideways, headlines assemble line by line, the page ground shifts colour as you travel, and the pointer moves things that are not scrolling.
-- **Eight mutually exclusive page grammars.** Filmic one-shot, chaptered editorial, live surface, continuous world, typographic poster, gallery, split stage, rhythmic cutlist. Each one *forbids* what the others require, so two builds cannot quietly converge.
-- **A required signature move.** Every build invents one bespoke interaction that exists on that site alone. A recoloured spotlight does not count.
-- **A fingerprint gate.** A new build must differ from every page you have already made on at least 4 of 6 dimensions: grammar, nav, hero, act shape, close, signature move. Fail it and you change the plan, not the record.
+Der Motor selbst (`scrollcraft.js`, 1167 Zeilen) ist **unverändert**. Verändert
+ist alles darum herum.
 
-**Craft, and how the page actually feels**
+## Die vier Anpassungen
 
-- **A feeling curve before any act exists.** One line per act: the emotion, then what on screen causes it. Two adjacent acts with the same feeling means one is filler.
-- **One engineered peak.** Peak-end rule, applied literally. The peak gets the asset budget, the silence in front of it, and the most scroll room. A page with three peaks has none.
-- **A typography floor.** Two families maximum, tracking that tightens as size grows, 45 to 75ch measure, line height inverse to measure, and light-on-dark compensated on three axes.
-- **A spacing scale with actual rhythm.** 4px base, more space above a heading than below it, fluid section padding so a phone does not inherit desktop air.
-- **Colour with six roles and one accent**, secondary text tinted rather than flat grey, no pure black, and a documented escape for pages that hard-cut between light and dark grounds.
-- **Depth as five tools, not one.** Offset shadows, edge light, scale-and-blur as distance, overlap, and grain.
-- **Brand guidelines are inputs, not decoration.** Point it at a brand kit and its hard rules win, including rules that forbid things the skill would otherwise reach for.
-- **A refuse list.** Identical feature-card grids, `01 / 06` counters, scroll cues, gradient text, em dashes, invented statistics, fake dashboards, AI-purple gradients, and the cream-and-brass artisan palette every craft brand defaults to.
+**1. Parameter reisen im `metadata`-Attribut.**
+Gutenberg hat kein Feld für `data-sc-act="scrub"`. Ein eigener Blocktyp bräuchte
+einen Build-Prozess und Pflege bei jedem WordPress-Update. Also:
 
-**It checks its own work**
+```html
+<!-- wp:group {"metadata":{"sc":{"act":"scrub","span":2.6}}} -->
+```
 
-A headless browser walks the finished page at every scroll position, waits for the video playhead to settle, and reports:
+wird serverseitig über `WP_HTML_Tag_Processor` zu
 
-- **dead scroll**: scroll that changes nothing on screen
-- **cues that never reach full opacity**: copy the reader can only ever see faded
-- **contrast measured on the composited page**, per line, at the brightest frame that ever passes under it, with the direction picked per line so light-on-dark and dark-on-light are both graded correctly
-- **legs stuck on a poster**: a clip that silently never decoded, which looks exactly like a paused film
+```html
+<div class="wp-block-group sc-act sc-act--pinned" data-sc-act="scrub" data-sc-span="2.6">
+```
 
-Then it writes a contact sheet, because a machine can prove a page works and cannot tell you it means anything.
+Kein Build, kein npm, editorfest. `metadata` ist seit WordPress 6.5 das Feld, in
+dem Core selbst die Block-Bindings transportiert.
+
+**2. Die Stildatei zeigt auf Ollie statt auf eigene Werte.**
+`--sc-ink` ist nicht mehr `#f4f2ef`, sondern
+`var(--wp--preset--color--main, #f4f2ef)`. Wer die Farben der Website ändert,
+ändert die Scroll-Seite mit. Dazu fällt der globale Reset weg, weil `html`,
+`body`, `img` und `button` in einem Blocktheme aus `theme.json` kommen.
+
+**3. Die Sticky-Rettung.**
+`position: sticky` stirbt lautlos, sobald ein Vorfahr `overflow: hidden` trägt,
+und `.wp-site-blocks` sowie `.wp-block-post-content` sind genau solche
+Kandidaten. Der Akt scrollt dann einfach durch, jede Cue rechnet weiter richtig,
+jeder Screenshot sieht plausibel aus, und niemand findet den Fehler. Deshalb
+steht die Rettung ganz oben in der Stildatei und nicht als Fußnote.
+
+**4. Geprüft wird gegen Staging, nicht gegen localhost.**
+Mit zwei Hostinger-Eigenheiten, die sonst falsche Ergebnisse liefern: der
+Bot-Schutz gibt `curl` 403 und lässt nur echte Browser durch, und der Edge-Cache
+liefert ohne Query-String den alten Stand aus.
+
+**5. Hell oder dunkel, je Seite wählbar.**
+Scrollcraft ist auf dunkle Seiten hin gebaut, die meisten Ollie-Auftritte sind
+hell. Beides ist richtig, je nach Projekt: Firmenauftritte hell, einzelne
+Landingpages dürfen dunkel. Gesetzt wird es an der Seite, nicht am Theme.
+
+```bash
+wp post meta update <ID> _th_scrollcraft_grund dunkel
+```
+
+Beides bleibt bei Ollies elf Farb-Slugs, getauscht werden nur die Rollen.
+Einzelne Akte können gegen den Rest laufen, `.sc-dark` in einer hellen Seite,
+`.sc-light` in einer dunklen.
+
+## Weiteres, das dazukam
+
+- **Assets über den Higgsfield-MCP** statt über kie.ai, plus einen Weg für
+  eigenes Material. Beides endet in der Mediathek, nicht in einem Build-Ordner.
+- **Sieben Patterns** als Bausteine: Scrub, Pin, Flow, Pan, Kennzahlen,
+  Abschluss und ein Seitengerüst aus sechs Akten.
+- **Fünf zusätzliche Interview-Fragen**, ohne die man in WordPress in die
+  falsche Richtung baut: neu oder Umbau, Staging oder Live, wer pflegt das
+  danach, Kopfbereich mit oder ohne, wieviel Gewicht ist erlaubt.
+- **Editor-Stildatei**, damit ein Akt im Backend als beschrifteter Kasten
+  erkennbar ist statt als Stapel nackter Gruppen.
+
+## Ein Fund im Motor
+
+`data-sc-kinetic` muss am selben Element sitzen wie `data-sc-cue`. Der Motor
+liest es von dem Element, das den Cue trägt, nicht von dessen Kindern.
+
+In Nates `template.html` und im ersten Beispiel von `references/devices.md` steht
+es an einem Kind. Dort läuft es stumm ins Leere: die Überschrift blendet mit dem
+Elternteil ein, baut sich aber nicht Zeile für Zeile auf. Das Beispiel in
+`devices.md §5` ist richtig. Die Patterns in diesem Fork folgen §5.
 
 ---
 
-## Install
+## Einrichten
+
+### 1. Skill
 
 ```bash
-/plugin marketplace add nateherkai/scroll-craft
-```
-```bash
-/plugin install nateherk-design
-```
-
-Then use it by describing what you want, or invoke it directly:
-
-```
-/nateherk-design:scrollcraft
+git clone https://github.com/tobbynaish/scroll-craft-wp.git
+ln -s "$PWD/scroll-craft-wp/plugins/th-scrollcraft-wp/skills/scrollcraft-wp" \
+      ~/.claude/skills/scrollcraft-wp
 ```
 
-If the install summary says `Run /reload-plugins to activate.`, run that.
-
-To hack on the skill without installing:
+### 2. WordPress-Plugin
 
 ```bash
-claude --plugin-dir ./plugins/nateherk-design
+rsync -az wp-plugin/th-scrollcraft/ \
+  HOST:/pfad/zu/wordpress/wp-content/plugins/th-scrollcraft/
+ssh HOST "wp plugin activate th-scrollcraft"
 ```
 
-## First run
+### 3. Seitenvorlage im Child-Theme
+
+`templates/page-scrollcraft.html` anlegen und in `theme.json` unter
+`customTemplates` eintragen. Der Wortlaut steht in
+`references/ollie-bruecke.md §4`.
+
+### 4. Zugangsdaten
 
 ```bash
-node scripts/doctor.mjs              # preflight: says exactly what is missing
-node scripts/workspace.mjs --ensure  # creates your workspace and an empty registry
+cp .scrollcraft-wp.env.example .scrollcraft-wp.env
 ```
 
-Run `doctor` before anything else. The three most common setup faults all surface later as misleading errors otherwise: a stripped ffmpeg reports a missing filter as a syntax error in *your* command, a missing WebP muxer reports as a bad filename, and `playwright-core` resolves from the wrong directory.
+Ausfüllen. Die Datei steht in `.gitignore`.
 
-## Requirements
+## Benutzen
 
-| | Why | Notes |
-| --- | --- | --- |
-| **Node 18+** | every script | |
-| **A full ffmpeg build** | encoding clips so they *scrub* rather than play | Some toolchains put a stripped ffmpeg on PATH with ~50 filters and no `scale`. `doctor` finds a real build if one exists; `SCROLLCRAFT_FFMPEG` overrides. |
-| **`playwright-core` + Chrome** | the verification pass | `npm i playwright-core` **in the build folder** |
-| **`KIE_AI_API_KEY`** | only if you want assets *generated* | Optional. Building from your own photos and footage needs no key and no spend, and it is a first-class route. See `.env.example`. |
-
-## The workspace
-
-Your builds and your fingerprint registry live in one directory, resolved rather than assumed. First hit wins:
-
-1. `SCROLLCRAFT_HOME`
-2. the nearest `.scrollcraft.json` walking up from the current directory: `{ "workspace": "path/to/builds" }`
-3. `<project root>/scrollcraft`
-
-Builds land in `<workspace>/builds/<name>/`; your registry is `<workspace>/FINGERPRINTS.md`.
-
-**Your registry starts empty, and that is correct.** The gate exists to stop you repeating *yourself*, so your first build has nothing to clear and every build after it does. [`EXAMPLES.md`](EXAMPLES.md) is the author's twelve-row table, included so you can see what a filled registry looks like and which shapes tend to collide. It is illustration, not constraint.
-
-## What is in here
+Im Gespräch sagen, was gebaut werden soll, und gleich mitgeben, was schon da ist:
+Texte, Bilder, eine bestehende Seite. Der Skill inventarisiert das zuerst und
+stellt danach nur noch die Fragen, deren Antwort nicht schon dasteht.
 
 ```
-plugins/nateherk-design/
-└── skills/scrollcraft/
-    ├── SKILL.md            the procedure: interview, grammar, score, build, verify
-    ├── references/
-    │   ├── uniqueness.md   eight page grammars, the signature move, the fingerprint gate
-    │   ├── feel.md         the feeling curve, the engineered peak, the feel check
-    │   ├── devices.md      nine scroll devices and the cue contract
-    │   ├── worldflight.md  continuous-world mode: one fixed stage, no seams
-    │   ├── worlds.md       art direction, and the style-preamble method
-    │   ├── taste.md        the design floor: spacing, type, colour, depth, motion
-    │   ├── assets.md       generation, camera moves, encoding for scrubbing
-    │   ├── verify.md       the harness, and what it cannot tell you
-    │   └── template.html   a starting skeleton, not a layout
-    ├── engine/             scrollcraft.js + .css. The mechanism, never edited per project
-    ├── templates/          the empty registry a new workspace is seeded from
-    └── scripts/            doctor · workspace · kie · encode · serve · shoot · worldflight-assert
+Bau mir eine Scroll-Seite für <Sache>. Hier ist der Text: ...
+Diese Bilder habe ich schon: ...
 ```
 
-[`CHANGELOG.md`](plugins/nateherk-design/skills/scrollcraft/CHANGELOG.md) is worth reading on its own: it records what broke on each build and the rule that came out of it, rather than a feature list.
+## Voraussetzungen
 
-## The one rule that matters most
+| | |
+|---|---|
+| WordPress | 6.4 oder neuer (`WP_HTML_Tag_Processor` braucht 6.2) |
+| PHP | 8.0 oder neuer |
+| Theme | OllieWP 1.6.1 als Parent, eigenes Child-Theme |
+| Server | SSH-Zugang plus `wp-cli`. Ohne beides ist jede Prüfung Handarbeit |
+| Lokal | Node 18+, ein vollständiger ffmpeg-Build, `playwright-core` |
 
-The engine is the mechanism and it is **never edited per project**. Theme it with six colour tokens and two fonts, write your own semantic HTML, and drive anything bespoke off the `--sc-p` custom property the engine publishes. A runtime that builds the page from a config object is exactly why every site built on one looks the same.
+`node plugins/th-scrollcraft-wp/skills/scrollcraft-wp/scripts/doctor.mjs` prüft
+das lokale Teil davon.
 
-## Honest limitations
+## Lizenz
 
-- **Only ever run on Windows.** The scripts look for ffmpeg and Chrome in Windows, macOS and Linux locations, but no build has been done on a Mac. `SCROLLCRAFT_FFMPEG` and `SCROLLCRAFT_CHROME` override the search.
-- **Generated video is not free.** A ten-leg continuous-world flight is a real spend. A page built from your own assets costs nothing.
-- **It is opinionated on purpose.** It will refuse the layouts and palettes that make AI pages recognisable, and it will argue with you about your peak. If you want a page that looks like everything else, this is the wrong tool.
-
-## Licence
-
-MIT. See [LICENSE](LICENSE).
+MIT, wie das Original. Der Motor und die Gestaltungslehre stammen von
+[Nate Herk](https://github.com/nateherkai).

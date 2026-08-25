@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Platzhalter">
+  <rect width="1600" height="900" fill="#1a1a1a"/>
+  <g stroke="#3a3a3a" stroke-width="2">
+    <path d="M0 0 L1600 900"/>
+    <path d="M1600 0 L0 900"/>
+    <rect x="1" y="1" width="1598" height="898" fill="none"/>
+  </g>
+  <rect x="560" y="400" width="480" height="100" fill="#1a1a1a"/>
+  <text x="800" y="465" fill="#8a8a8a" font-family="ui-monospace, monospace" font-size="46"
+        letter-spacing="4" text-anchor="middle">BILD ERSETZEN</text>
+</svg>

@@ -1,15 +1,25 @@
 {
-  "name": "nateherk",
-  "description": "Design and build skills from Nate Herk.",
+  "name": "tobbynaish",
+  "description": "Scrollcraft fuer WordPress. Fork von nateherkai/scroll-craft, angepasst auf OllieWP-Blockthemes.",
   "owner": {
-    "name": "Nate Herk",
-    "url": "https://github.com/nateherkai"
+    "name": "Tobias Herold",
+    "url": "https://github.com/tobbynaish"
   },
   "plugins": [
     {
+      "name": "th-scrollcraft-wp",
+      "source": "./plugins/th-scrollcraft-wp",
+      "description": "scrollcraft-wp: baut scroll-getriebene Seiten als echte Gutenberg-Bloecke auf einem OllieWP-Child-Theme. Interview, Grammatik, Assets ueber Higgsfield oder eigenes Material, Deploy nach Staging, Pruefung per Screenshot-Lauf.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tobias Herold"
+      },
+      "license": "MIT"
+    },
+    {
       "name": "nateherk-design",
       "source": "./plugins/nateherk-design",
-      "description": "scrollcraft: build a premium, scroll-driven interactive landing page. Scroll becomes the timeline, and the page verifies its own contrast, motion and accessibility by screenshotting itself.",
+      "description": "Das unveraenderte Original von Nate Herk, fuer Seiten ausserhalb von WordPress und als Referenz beim Abgleich mit dem Upstream.",
       "version": "0.2.0",
       "author": {
         "name": "Nate Herk"
