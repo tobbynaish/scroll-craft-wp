@@ -83,7 +83,10 @@ done
 
 echo "→ ${#DATEIEN[@]} Dateien nach $SCWP_HOST:$FERN"
 $SSH_CMD "$SCWP_HOST" "mkdir -p '$FERN'"
-rsync -a --info=NAME1 -e "$SSH_CMD" "${DATEIEN[@]}" "$SCWP_HOST:$FERN/"
+# Kein --info=NAME1: macOS liefert bis heute rsync 2.6.9 aus, und das kennt
+# den Schalter nicht. Es bricht dann mit der kompletten Aufrufhilfe ab, was wie
+# ein Fehler im Skript aussieht und keiner ist.
+rsync -a -e "$SSH_CMD" "${DATEIEN[@]}" "$SCWP_HOST:$FERN/"
 
 echo
 printf '%-34s %-8s %s\n' "DATEI" "ID" "URL"

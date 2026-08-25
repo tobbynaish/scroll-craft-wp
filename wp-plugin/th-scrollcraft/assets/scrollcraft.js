@@ -207,6 +207,36 @@
   // run once fonts are ready or the line boxes are wrong.
   function splitText(el, mode) {
     if (el.__scSplit) return el.__scSplit;
+
+    // ==================================================== th-scrollcraft ==
+    // PATCH 2: nichts zerlegen, was Kindelemente hat.
+    //
+    // Die Routine setzt gleich el.textContent = '' und baut den Text aus
+    // Spans neu auf. Bei einem Element mit echten Kindern loescht das die
+    // Kinder. Aus einer Ueberschrift plus Absatz wird eine Reihe flacher
+    // Spans, die Ueberschrift ist aus dem DOM und aus dem Accessibility-Baum
+    // verschwunden, und im Screenshot sieht es nur nach falscher Schriftgroesse
+    // aus.
+    //
+    // Lieber gar kein kinetischer Aufbau als zerstoerter Inhalt. Der Aufrufer
+    // faellt auf das gewoehnliche Einblenden zurueck.
+    //
+    // Gemeldet als nateherkai/scroll-craft#1.
+    // Eigene Split-Spans zaehlen NICHT als Kinder. Nach document.fonts.ready
+    // zerlegt der Motor absichtlich ein zweites Mal, weil Zeilenumbrueche erst
+    // mit der echten Schrift stimmen. Zu diesem Zeitpunkt stehen die Spans des
+    // ersten Durchgangs noch im DOM. Ein Waechter, der nur children.length
+    // prueft, lehnt genau diesen legitimen zweiten Durchgang ab und schaltet
+    // die Kinetik dauerhaft aus. Und weil es davon abhaengt, ob die Schrift vor
+    // oder nach dem ersten Sichtbarwerden geladen ist, waere es ein Wettlauf,
+    // der mal gutgeht und mal nicht.
+    if (el.querySelector(':scope > :not(.sc-split)')) {
+      console.warn('[scrollcraft] data-sc-kinetic an einem Element mit Kindelementen wird ' +
+        'uebersprungen, sonst wuerden die Kinder geloescht. Beide Attribute an das Textelement.', el);
+      return null;
+    }
+    // ==================================================================== */
+
     var text = el.textContent;
     var units = [];
 
@@ -355,8 +385,10 @@
       if (act.rail) act.railExtra = parseFloat(act.rail.getAttribute('data-sc-pan')) || 0;
 
       // cues
-      Array.prototype.forEach.call(el.querySelectorAll('[data-sc-cue]'), function (c) {
-        var nums = (c.getAttribute('data-sc-cue') || '').trim().split(/\s+/).map(parseFloat);
+      // [th-scrollcraft] Der Bau eines Cue-Eintrags ist ausgelagert, weil ihn
+      // der Patch weiter unten ein zweites Mal braucht. Sonst unveraendert.
+      function cueBauen(c, fensterVon, kineticModus) {
+        var nums = (fensterVon.getAttribute('data-sc-cue') || '').trim().split(/\s+/).map(parseFloat);
         // from [to [rampIn [rampOut]]]
         // rampIn/rampOut are fractions OF THE WINDOW, defaulting to 0.3 each.
         // That leaves a ~40% plateau at full opacity in the middle. Without a
@@ -370,13 +402,50 @@
           rIn: nums.length > 2 && !isNaN(nums[2]) ? clamp01(nums[2]) : 0.3,
           rOut: nums.length > 3 && !isNaN(nums[3]) ? clamp01(nums[3]) : null,
           rise: parseFloat(c.getAttribute('data-sc-rise')),
-          kinetic: c.getAttribute('data-sc-kinetic'),
+          kinetic: kineticModus,
           units: null, state: -1
         };
         if (cue.rOut === null) cue.rOut = (nums.length > 2 && !isNaN(nums[2])) ? 0.3 : 0.3;
         if (isNaN(cue.rise)) cue.rise = 1;
-        act.cues.push(cue);
+        return cue;
+      }
+
+      Array.prototype.forEach.call(el.querySelectorAll('[data-sc-cue]'), function (c) {
+        act.cues.push(cueBauen(c, c, c.getAttribute('data-sc-kinetic')));
       });
+
+      // ==================================================== th-scrollcraft ==
+      // PATCH 1: data-sc-kinetic an einem Kind des Cue-Elements.
+      //
+      // Der Motor liest data-sc-kinetic ausschliesslich von dem Element, das
+      // data-sc-cue traegt. Steht es an einem Kind, wird es nie gelesen: die
+      // Ueberschrift blendet mit dem Elternteil ein und baut sich nicht Zeile
+      // fuer Zeile auf. Es wirft nichts, und kein einzelner Screenshot zeigt
+      // einen Unterschied.
+      //
+      // Das Hochziehen ans Elternelement waere schlimmer. splitText() setzt
+      // el.textContent = '' und loescht damit alle Kindelemente, aus einer
+      // Ueberschrift plus Absatz wuerden flache Spans.
+      //
+      // Also: das Kind bekommt einen eigenen Cue mit dem Fenster des
+      // Traegers. Der Traeger blendet weiter als Ganzes ein, das Kind baut
+      // sich zusaetzlich auf. Genau das, was jemand erwartet, der es so
+      // geschrieben hat.
+      //
+      // Gemeldet als nateherkai/scroll-craft#1. Faellt weg, sobald es dort
+      // behoben ist. Die eigenen Patterns setzen beide Attribute ohnehin an
+      // dasselbe Element, damit ihr Markup auch auf dem Original laeuft.
+      Array.prototype.forEach.call(el.querySelectorAll('[data-sc-kinetic]'), function (k) {
+        if (k.hasAttribute('data-sc-cue')) return;          // kanonisch geschrieben
+        var traeger = k.parentElement && k.parentElement.closest('[data-sc-cue]');
+        if (!traeger || !el.contains(traeger)) {
+          console.warn('[scrollcraft] data-sc-kinetic ohne data-sc-cue am selben Element und ohne ' +
+            'Cue-Vorfahren tut nichts. Beide Attribute an das Textelement.', k);
+          return;
+        }
+        act.cues.push(cueBauen(k, traeger, k.getAttribute('data-sc-kinetic')));
+      });
+      // ==================================================================== */
 
       // parallax
       Array.prototype.forEach.call(el.querySelectorAll('[data-sc-parallax]'), function (c) {
@@ -865,8 +934,14 @@
           }
           vis = clamp01(vis);
 
+          // [th-scrollcraft] splitText gibt seit Patch 2 null zurueck, wenn es
+          // sich weigert. Dann faellt dieser Cue dauerhaft auf das
+          // gewoehnliche Einblenden zurueck statt auf einen Fehler.
+          if (q.kinetic && !q.units) {
+            q.units = splitText(q.el, q.kinetic);
+            if (!q.units) q.kinetic = null;
+          }
           if (q.kinetic) {
-            if (!q.units) q.units = splitText(q.el, q.kinetic);
             var n = q.units.length;
             // Stagger across the reveal window. 0.62 spread leaves the tail of
             // the window for the last unit to finish, so the line lands together

@@ -117,8 +117,20 @@ Der dritte Wert im Cue (`0 0.78 0`) ist die Einblend-Rampe. Auf 0 gesetzt heißt
 sofort da, wenn die Seite lädt. Ein Hero, der aus dem Nichts einblendet, blendet
 über den einen Moment ein, in dem es sonst nichts zu sehen gibt.
 
-`data-sc-src` steht direkt im HTML, weil es hier kein Block-Attribut gibt. Wer
-lieber mit Anhang-IDs arbeitet, setzt sie über `metadata` an einen `core/video`.
+`data-sc-src` steht direkt im HTML, weil `core/html` kein Block-Attribut für ein
+inneres `video` hat. Statt fester URLs gehört dort besser die Anhang-ID als
+`wp:<ID>`, das Plugin löst sie beim Rendern auf:
+
+```html
+<img class="sc-stage__poster" src="wp:107" alt="" width="1920" height="1080">
+<video data-sc-scrub data-sc-src="wp:108" data-sc-src-mobile="wp:106"
+       muted playsinline></video>
+```
+
+Der Weg über `metadata` funktioniert hier **nicht**. Die Brücke schreibt nur an
+das äußere Tag eines Blocks, und das ist bei `core/html` kein `video`. Ein
+`core/video` wäre auch kein Ausweg, weil es ein `figure` darum legt und
+Bedienelemente mitbringt.
 
 **Höchstens zwei Scrub-Akte pro Seite.**
 

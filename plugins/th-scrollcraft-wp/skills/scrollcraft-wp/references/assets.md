@@ -127,14 +127,27 @@ bash <skill>/scripts/mediathek.sh assets/
 
 Das Skript spielt den Ordner nach `/tmp` auf dem Server, importiert jede Datei
 mit `wp media import` und gibt eine Tabelle aus Dateiname und Anhang-ID zurück.
-Die IDs kommen ins Markup, nicht die URLs:
+
+**Die IDs kommen ins Markup, nicht die URLs.** Geschrieben als `wp:<ID>`, das
+Plugin löst sie beim Rendern auf:
 
 ```html
-<!-- wp:group {"metadata":{"sc":{"src":184,"srcMobile":185}}} -->
+<!-- wp:html -->
+<img class="sc-stage__poster" src="wp:107" alt="" width="1920" height="1080">
+<video data-sc-scrub data-sc-src="wp:108" data-sc-src-mobile="wp:106"
+       muted playsinline></video>
+<!-- /wp:html -->
 ```
 
-Eine Anhang-ID überlebt einen Domainwechsel und den Umzug von Staging auf Live.
-Eine fest eingetragene URL nicht.
+Aufgelöst werden `src`, `poster`, `data-sc-src` und `data-sc-src-mobile` an
+`video`, `img` und `source`, und nur innerhalb von `core/html`.
+
+Warum überhaupt IDs: eine Seite mit fest eingetragenen URLs zeigt nach dem Umzug
+von Staging auf Live auf die alte Domain. Ein `wp search-replace` repariert das
+zwar, aber nur wenn jemand daran denkt. Eine ID ist von sich aus umzugsfest.
+
+Fehlt der Anhang, bleibt `wp:108` im Quelltext stehen statt still zu
+verschwinden. Ein sichtbarer Verweis ist auffindbar, ein leeres `src` nicht.
 
 **Fremde Hosts gehen nicht, und das ist kein Versehen.** Der Motor holt den Clip
 per `fetch` in ein Blob, damit er springen kann, ohne dass der Server

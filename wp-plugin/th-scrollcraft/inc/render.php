@@ -254,3 +254,73 @@ function th_sc_render_block( string $html, array $block ): string {
 	return $p->get_updated_html();
 }
 add_filter( 'render_block', 'th_sc_render_block', 10, 2 );
+
+/**
+ * Anhang-IDs in rohem HTML auflösen.
+ *
+ * Die Medien-Ebene eines Akts ist ein core/html-Block, weil Video, Standbild
+ * und Verlauf Mechanik sind und nicht in den Editor gehören. Dort greift die
+ * metadata-Brücke aber nicht, denn sie schreibt nur an das äußere Tag eines
+ * Blocks, und das ist bei core/html kein video.
+ *
+ * Also ein zweiter, kleiner Weg: wer `wp:108` in ein Quell-Attribut schreibt,
+ * bekommt beim Rendern die echte URL aus der Mediathek.
+ *
+ *   <video data-sc-scrub data-sc-src="wp:108" data-sc-src-mobile="wp:106"></video>
+ *   <img class="sc-stage__poster" src="wp:107" alt="">
+ *
+ * Warum überhaupt IDs statt URLs: eine Seite, die mit festen URLs gebaut ist,
+ * zeigt nach dem Umzug von Staging auf Live auf die alte Domain. Ein
+ * search-replace repariert das zwar, aber nur wenn jemand daran denkt. Eine ID
+ * ist von sich aus umzugsfest.
+ *
+ * @param string $html  Gerendertes Block-Markup.
+ * @param array  $block Geparster Block.
+ * @return string
+ */
+function th_sc_render_html_ids( string $html, array $block ): string {
+	if ( ( $block['blockName'] ?? '' ) !== 'core/html' || ! str_contains( $html, 'wp:' ) ) {
+		return $html;
+	}
+
+	$attribute = array( 'src', 'data-sc-src', 'data-sc-src-mobile', 'poster' );
+	$p         = new WP_HTML_Tag_Processor( $html );
+	$geaendert = false;
+
+	while ( $p->next_tag() ) {
+		$tag = $p->get_tag();
+
+		if ( 'VIDEO' !== $tag && 'IMG' !== $tag && 'SOURCE' !== $tag ) {
+			continue;
+		}
+
+		foreach ( $attribute as $attr ) {
+			$wert = $p->get_attribute( $attr );
+
+			if ( ! is_string( $wert ) || ! preg_match( '/^wp:(\d+)$/', trim( $wert ), $treffer ) ) {
+				continue;
+			}
+
+			$url = wp_get_attachment_url( (int) $treffer[1] );
+
+			if ( ! is_string( $url ) ) {
+				// Fehlt der Anhang, bleibt der Verweis stehen statt still zu
+				// verschwinden. Ein sichtbares wp:108 im Quelltext findet man,
+				// ein leeres src-Attribut nicht.
+				continue;
+			}
+
+			$p->set_attribute( $attr, $url );
+			$geaendert = true;
+		}
+	}
+
+	if ( ! $geaendert ) {
+		return $html;
+	}
+
+	th_scrollcraft_mark_used();
+
+	return $p->get_updated_html();
+}
+add_filter( 'render_block', 'th_sc_render_html_ids', 11, 2 );
