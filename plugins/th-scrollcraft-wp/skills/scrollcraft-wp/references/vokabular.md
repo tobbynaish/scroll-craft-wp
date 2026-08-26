@@ -333,3 +333,38 @@ Vom Motor gesetzt, nie selbst schreiben: `sc-act`, `sc-act--pinned`, `sc-stage`,
 `sc-has-clip`, `sc-in`, `sc-ready`, `sc-split`, `sc-split__i`, `sc-is-split`,
 `sc-world`, `sc-world__seg`, `sc-world__poster`, `sc-world__copy`,
 `sc-world__spacer`.
+
+
+## Drei Fallen, die still danebengehen
+
+Alle drei sind am 2026-08-26 beim ersten echten Bau aufgetreten. Keine wirft
+einen Fehler, keine fällt in den Messwerten auf, alle drei sieht man erst auf
+dem Kontaktbogen.
+
+### Eine Kopie-Variante, die es nicht gibt
+
+Das Plugin kennt genau drei: `sc-copy--lead`, `sc-copy--center`,
+`sc-copy--trail`. Wer sich eine vierte ausdenkt, bekommt keine Warnung. Der
+Block behält aus `.sc-copy` nur `position: absolute` und `inset-inline`, hat
+weder `top` noch `bottom` und landet am oberen Rand der Bühne.
+
+Bei einer kurzen Überschrift fällt das nicht auf. Bei einer vierzeiligen wird
+die erste Zeile oben abgeschnitten, und es sieht aus wie ein Umbruchproblem.
+
+Eigene Varianten sind erlaubt, sie müssen nur im Seiten-CSS definiert werden.
+
+### `<br>` in einer Überschrift mit `kinetic`
+
+Ein Zeilenumbruch ist ein Kindelement. `splitText()` verweigert Elemente mit
+Kindern, weil es sie sonst löscht, und die Kinetik fällt still auf gewöhnliches
+Einblenden zurück.
+
+`kinetic="lines"` bricht ohnehin nach den echten gerenderten Zeilen um. Ein
+Umbruch von Hand ist also doppelt falsch: überflüssig und schädlich.
+
+### `sc-close` und `sc-argument` an den Akt statt an die Bühne
+
+Beide setzen `display: grid` und `height: 100%`. An einer Gruppe **innerhalb**
+einer Bühne ist das richtig. Am Akt selbst bringt es die klebende Bühne
+durcheinander, und der ganze Akt bleibt leer. Drei Aufnahmen weiße Seite, kein
+Fehler in der Konsole.

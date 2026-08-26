@@ -324,3 +324,68 @@ function th_sc_render_html_ids( string $html, array $block ): string {
 	return $p->get_updated_html();
 }
 add_filter( 'render_block', 'th_sc_render_html_ids', 11, 2 );
+
+/**
+ * Einem flow-Akt seine Höhe geben.
+ *
+ * Der Motor setzt die Höhe eines Akts nur für pin, scrub und pan. Bei flow
+ * rechnet er p aus der Höhe, die das Element von sich aus hat:
+ *
+ *   p = (y + vh - top) / (height + vh)
+ *
+ * Das ist richtig für einen Abschnitt aus fließendem Text. Es bricht, sobald
+ * der Akt eine Bühne enthält, in der alles absolut positioniert ist: dann hat
+ * er keine eigene Höhe, fällt auf null zusammen, und p bleibt konstant bei
+ * ungefähr 0,5 stehen. Es wirft nichts, es sieht im Editor richtig aus, und im
+ * Browser bewegt sich einfach nichts.
+ *
+ * Gemessen am 2026-08-26: p-Verlauf [0.5, 0.5, 0.501, 0.501] über den ganzen
+ * Akt. Der Prüfling hat es gefunden, das Auge hätte es für eine ruhige
+ * Gestaltung gehalten.
+ *
+ * Also übersetzt die Brücke span hier zu einer Mindesthöhe, so wie sie sonst
+ * Parameter zu Attributen übersetzt. Der Motor bleibt unangetastet, und wer
+ * eine andere Höhe will, überschreibt min-height im Seiten-CSS.
+ *
+ * @param string $html  Gerendertes Block-Markup.
+ * @param array  $block Geparster Block.
+ * @return string
+ */
+function th_sc_render_flow_hoehe( string $html, array $block ): string {
+	$sc = $block['attrs']['metadata']['sc'] ?? null;
+
+	if ( ! is_array( $sc ) ) {
+		return $html;
+	}
+
+	$act = $sc['act'] ?? '';
+
+	// Voreinstellung des Motors ist flow, ein fehlendes act zählt also mit.
+	if ( '' !== $act && 'flow' !== $act ) {
+		return $html;
+	}
+
+	$span = $sc['span'] ?? null;
+
+	if ( ! is_numeric( $span ) || $span <= 0 ) {
+		return $html;
+	}
+
+	$p = new WP_HTML_Tag_Processor( $html );
+
+	if ( ! $p->next_tag() ) {
+		return $html;
+	}
+
+	$vorher = (string) $p->get_attribute( 'style' );
+
+	if ( str_contains( $vorher, 'min-height' ) ) {
+		return $html;
+	}
+
+	$hoehe = 'min-height:' . round( (float) $span * 100, 2 ) . 'vh';
+	$p->set_attribute( 'style', $vorher ? rtrim( $vorher, '; ' ) . ';' . $hoehe : $hoehe );
+
+	return $p->get_updated_html();
+}
+add_filter( 'render_block', 'th_sc_render_flow_hoehe', 12, 2 );
