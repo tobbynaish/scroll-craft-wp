@@ -124,6 +124,20 @@ async function auswerten(ausdruck) {
 
 const ergebnis = await auswerten(`(async () => {
   const rafs = n => new Promise(r => { let i = 0; const t = () => (++i >= n ? r() : requestAnimationFrame(t)); requestAnimationFrame(t); });
+  // Auf den Motor warten statt einmal nachzusehen.
+  //
+  // Das Startskript haengt an DOMContentLoaded und das Motorskript laeuft mit
+  // defer. Auf einer schmalen Ansicht mit viel eingebettetem SVG dauert das
+  // spuerbar laenger als auf dem Schreibtisch. Ein einmaliger Blick meldet dann
+  // "Motor nicht gemountet", obwohl er eine halbe Sekunde spaeter laeuft.
+  //
+  // Genau so ist es am 2026-08-26 passiert: mobil rot, und der Fehler lag im
+  // Pruefwerkzeug, nicht auf der Seite. Ein Pruefwerkzeug, das falschen Alarm
+  // gibt, ist schlimmer als keins, weil man anfaengt ihm zu misstrauen.
+  for (let i = 0; i < 60; i++) {
+    if (window.ScrollCraft && ScrollCraft.instances.length) break;
+    await new Promise(r => setTimeout(r, 100));
+  }
   if (!window.ScrollCraft || !ScrollCraft.instances.length) return { fehler: 'Motor nicht gemountet' };
   const akte = [...document.querySelectorAll('[data-sc-act]')];
   const H = innerHeight;
