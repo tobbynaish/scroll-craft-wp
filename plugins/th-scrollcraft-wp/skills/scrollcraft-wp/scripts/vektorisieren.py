@@ -35,6 +35,11 @@ from PIL import Image
 from scipy import ndimage
 from skimage import measure
 
+# Wieviel feiner die Maske abgetastet wird, bevor die Kontur gesucht wird. Auf
+# dem Pixelgitter selbst ist jede schraege Kante eine Treppe, und die bleibt in
+# den Pfaden stehen. Vierfach reicht, achtfach kostet nur Zeit.
+UEBERABTASTUNG = 4
+
 
 def palette_holen(bild: Image.Image, farben: int):
     """Auf die echte Palette quantisieren und Flaechen zurueckgeben."""
@@ -66,36 +71,115 @@ def teile_aus_maske(maske: np.ndarray):
         yield stueck, (int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())), int(stueck.sum())
 
 
+def als_kurve(x: np.ndarray, y: np.ndarray) -> str:
+    """Geschlossenen Streckenzug als glatten Bezier-Pfad schreiben.
+
+    Ein Streckenzug bleibt eckig, egal wie fein er abgetastet ist. Aus drei
+    aufeinanderfolgenden Punkten laesst sich aber die Tangente im mittleren
+    schaetzen, und daraus werden die beiden Kontrollpunkte eines kubischen
+    Segments. Das ist Catmull-Rom, umgerechnet auf Bezier.
+
+    Der Faktor 6 ist die uebliche Umrechnung. Kleiner macht die Kurve schlaffer,
+    groesser laesst sie zwischen den Punkten ausbeulen.
+    """
+    n = len(x)
+    if n < 3:
+        return ""
+
+    teile = [f"M {x[0]:.2f},{y[0]:.2f}"]
+
+    for i in range(n):
+        p0x, p0y = x[i - 1], y[i - 1]
+        p1x, p1y = x[i], y[i]
+        p2x, p2y = x[(i + 1) % n], y[(i + 1) % n]
+        p3x, p3y = x[(i + 2) % n], y[(i + 2) % n]
+
+        c1x, c1y = p1x + (p2x - p0x) / 6.0, p1y + (p2y - p0y) / 6.0
+        c2x, c2y = p2x - (p3x - p1x) / 6.0, p2y - (p3y - p1y) / 6.0
+
+        teile.append(f"C {c1x:.2f},{c1y:.2f} {c2x:.2f},{c2y:.2f} {p2x:.2f},{p2y:.2f}")
+
+    teile.append("Z")
+    return " ".join(teile)
+
+
 def pfade_aus_maske(maske: np.ndarray, toleranz: float, min_flaeche: float):
     """Umrisse einer Flaeche als SVG-Pfaddaten.
 
     find_contours liefert Aussen- und Innenkonturen getrennt. Beide landen in
     einem Pfad, und fill-rule evenodd macht daraus Loecher statt Klumpen. Ohne
     das ist jede Brille eine Sonnenbrille.
+
+    WARUM UEBERABTASTEN UND WEICHZEICHNEN
+
+    Auf dem Pixelgitter hat jede schraege Kante Stufen. Wer die Kontur direkt
+    dort sucht, bekommt genau diese Stufen als Pfad, und im SVG sieht man sie
+    bei jeder Vergroesserung. Das Ergebnis ist dann schlechter als das PNG,
+    weil dem PNG wenigstens die Kantenglaettung hilft.
+
+    Also: die Maske vierfach feiner abtasten, leicht weichzeichnen, und erst
+    dann die Kontur bei 0,5 suchen. Der Weichzeichner verschiebt die Kante um
+    weniger als einen Originalpixel, glaettet die Treppe aber vollstaendig.
+    Danach wird zurueckgerechnet.
     """
-    # Ein Rand aus Nullen, sonst schneidet find_contours Formen ab, die den
-    # Bildrand beruehren, und die Illustration verliert ihre Grundflaeche.
-    gepolstert = np.pad(maske.astype(float), 1, mode="constant", constant_values=0)
+    # NUR DEN KASTEN DES TEILS ABTASTEN, nicht das ganze Bild.
+    #
+    # Vierfache Ueberabtastung eines 1280x960-Feldes sind 20 Millionen Werte,
+    # und das je Ebene und je Teil. Der erste Versuch lief nach zwei Minuten
+    # noch. Die meisten Teile sind aber klein: ein Auge, ein Punkt, ein Knopf.
+    # Auf ihren Kasten beschnitten ist derselbe Lauf eine Sache von
+    # Sekundenbruchteilen, und das Ergebnis ist identisch, weil ausserhalb des
+    # Kastens ohnehin nichts steht.
+    ys, xs = np.nonzero(maske)
+
+    if len(ys) == 0:
+        return "", 0, 0
+
+    y0, y1 = int(ys.min()), int(ys.max()) + 1
+    x0, x1 = int(xs.min()), int(xs.max()) + 1
+    ausschnitt = maske[y0:y1, x0:x1]
+
+    gepolstert = np.pad(ausschnitt.astype(float), 2, mode="constant", constant_values=0)
+
+    fein = ndimage.zoom(gepolstert, UEBERABTASTUNG, order=1)
+    fein = ndimage.gaussian_filter(fein, sigma=UEBERABTASTUNG * 0.5)
+
     stuecke = []
     verworfen = 0
 
-    for kontur in measure.find_contours(gepolstert, 0.5):
-        vereinfacht = measure.approximate_polygon(kontur, tolerance=toleranz)
+    for kontur in measure.find_contours(fein, 0.5):
+        # Toleranz in der feinen Aufloesung, damit sie dieselbe Bedeutung hat.
+        vereinfacht = measure.approximate_polygon(kontur, tolerance=toleranz * UEBERABTASTUNG)
 
-        if len(vereinfacht) < 3:
+        if len(vereinfacht) < 4:
             verworfen += 1
             continue
 
-        # Flaeche nach Gauss, um Krimskrams auszusortieren.
-        y, x = vereinfacht[:, 0] - 1, vereinfacht[:, 1] - 1
+        # Zurueck in die Koordinaten des Originals: Ueberabtastung heraus,
+        # Polsterung heraus, Versatz des Ausschnitts wieder drauf.
+        y = vereinfacht[:, 0] / UEBERABTASTUNG - 2 + y0
+        x = vereinfacht[:, 1] / UEBERABTASTUNG - 2 + x0
+
+        # approximate_polygon gibt den ersten Punkt am Ende noch einmal aus. Als
+        # Stuetzstelle einer geschlossenen Kurve waere er ein Duplikat und
+        # erzeugt dort eine Delle.
+        if abs(x[0] - x[-1]) < 1e-6 and abs(y[0] - y[-1]) < 1e-6:
+            x, y = x[:-1], y[:-1]
+
+        if len(x) < 3:
+            verworfen += 1
+            continue
+
         flaeche = 0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
         if flaeche < min_flaeche:
             verworfen += 1
             continue
 
-        punkte = " ".join(f"{px:.1f},{py:.1f}" for px, py in zip(x, y))
-        stuecke.append(f"M {punkte} Z")
+        pfad = als_kurve(x, y)
+
+        if pfad:
+            stuecke.append(pfad)
 
     return " ".join(stuecke), len(stuecke), verworfen
 

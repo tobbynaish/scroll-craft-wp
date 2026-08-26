@@ -294,6 +294,29 @@ lässt es sich einzeln an `--sc-p` hängen.
 Nebenwirkung, angenehm: mit der Zerlegung fiel der Verwurf von 6804 auf 603
 Konturen, weil jedes Stück für sich abgefahren wird statt alle zusammen.
 
+**Kurven, keine Treppen.** Der erste Wurf fuhr die Pixelkante ab und gab nur
+gerade Strecken aus. Das Ergebnis war bei Vergroesserung **schlechter als das
+PNG**, weil dem PNG wenigstens die Kantenglättung hilft, dem Pfad aber nichts.
+Rückmeldung dazu war „total pixelig", und das war richtig.
+
+Zwei Dinge beheben es, beide sind nötig:
+
+1. **Überabtasten und weichzeichnen, bevor die Kontur gesucht wird.** Die Maske
+   vierfach feiner, ein leichter Gauß, dann die Kontur bei 0,5. Der
+   Weichzeichner verschiebt die Kante um weniger als einen Originalpixel und
+   glättet die Treppe vollständig.
+2. **Bézier statt Streckenzug.** Aus je drei Stützstellen die Tangente
+   schätzen, daraus die Kontrollpunkte eines kubischen Segments. Catmull-Rom
+   auf Bézier umgerechnet, Faktor 6.
+
+Der Preis: aus 59 KB werden 166 KB je Illustration. Das ist es wert, alles
+andere sieht billig aus.
+
+**Nur den Kasten des Teils abtasten.** Vierfache Überabtastung eines
+1280×960-Feldes sind 20 Millionen Werte, je Ebene und je Teil. Der erste Lauf
+war nach zwei Minuten noch nicht fertig. Auf den Kasten beschnitten sind es
+sieben Sekunden, bei identischem Ergebnis.
+
 **Was das kann und was nicht.**
 
 | geht | geht nicht |
