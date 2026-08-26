@@ -253,3 +253,54 @@ zweite Kompression nicht auf einem bereits beschädigten Bild aufsetzt.
 darüber, der würde mitmultipliziert und den Clip abdunkeln, statt den Text
 freizustellen. Und alles Weiße im Bild verschwindet mit: der weiße Tisch im
 ersten Clip war schon roh bei 207 und ist am Ende nur noch als Umriss da.
+
+
+## Hausstil aus PNG zurückholen
+
+Der häufigste Fall bei einem Bestandskunden: der Hausstil existiert als
+Illustration, aber auf dem Server liegen nur PNG. Kein SVG, kein AI, der
+Illustrator ist nicht greifbar.
+
+Das ist kein Sackgassenfall. Eine flache Vektor-Illustration, die zu PNG
+gerendert wurde, hat harte Kanten und eine Handvoll echter Farben. Was eine
+Zählung als zweitausend Farben meldet, ist fast alles Kantenglättung. Wer auf
+die echte Palette quantisiert, bekommt die Flächen zurück, und deren Umrisse
+sind wieder Pfade.
+
+```bash
+./scripts/vektorisieren.py bild.png ziel.svg --farben 40 --toleranz 0.5 --min-flaeche 3
+```
+
+**Die Farbzahl entscheidet über alles.** Gemessen an `vr-illus-automatisierung.png`:
+
+| Farben | Ergebnis |
+|---|---|
+| 14 | Stiefel verschwunden, Pflanze dunkel statt grün, Akzentpunkte falsch |
+| 24 | brauchbar, Roboter weich |
+| **40** | **Original bis auf einen Punkt und etwas Roboter-Detail** |
+
+Unter 24 wirft MEDIANCUT echte Töne zusammen, und man merkt es erst, wenn man
+beide Bilder nebeneinander rendert. Also immer nebeneinander rendern, nie der
+Statistik glauben.
+
+**Nach Gegenständen zerlegen, nicht nach Farbe.** Das Skript trennt jede
+Farbfläche zusätzlich in zusammenhängende Stücke. Ohne das ist eine Ebene
+„alles Grüne": die Pflanze, der Punkt oben rechts und der Streifen am Ärmel in
+einem Pfad. Man könnte die Pflanze nicht bewegen, ohne den Punkt mitzunehmen.
+
+Jedes Stück bekommt eine `id` und ein `data-kasten` mit seinen Maßen. Damit
+lässt es sich einzeln an `--sc-p` hängen.
+
+Nebenwirkung, angenehm: mit der Zerlegung fiel der Verwurf von 6804 auf 603
+Konturen, weil jedes Stück für sich abgefahren wird statt alle zusammen.
+
+**Was das kann und was nicht.**
+
+| geht | geht nicht |
+|---|---|
+| Verschieben, drehen, skalieren | Eine Figur neu stellen. Ein Arm ist eine Fläche, kein Gelenk |
+| Ein- und ausblenden, Reihenfolge ändern | Ein anderer Blickwinkel |
+| Farben tauschen, weil jede Ebene ihre Füllung hat | Details unterhalb der Toleranz, die sind weg |
+| Beliebig skalieren ohne Schärfeverlust | Verläufe, die werden zu Stufen |
+
+Wer die Figur neu stellen muss, braucht den Illustrator. Alles andere geht.
