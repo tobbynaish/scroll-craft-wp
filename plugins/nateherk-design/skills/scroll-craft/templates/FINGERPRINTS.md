@@ -1,6 +1,6 @@
 # Fingerprints
 
-Every site you build with **scrollcraft** gets one row here, appended after it
+Every site you build with **scroll-craft** gets one row here, appended after it
 ships. The registry exists so your next build can prove it is a different page
 rather than a re-skin of one you already made.
 
@@ -60,6 +60,6 @@ because the space it occupies is still occupied.
 
 The skill's author kept a registry of twelve builds across eight page grammars.
 If you want to see what a filled-in table looks like, and which shapes tend to
-collide, read `EXAMPLES.md` in the scrollcraft repository. Treat it as
+collide, read `EXAMPLES.md` in the scroll-craft repository. Treat it as
 illustration only: those rows are somebody else's builds and they do **not**
 constrain yours.

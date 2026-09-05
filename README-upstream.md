@@ -1,32 +1,63 @@
-# scrollcraft
+# scroll-craft
 
-**A Claude Code skill that builds premium, scroll-driven websites, and holds them to a real design standard.**
+**An agent skill for building premium, scroll-driven websites, with a real design standard.**
 
-Most AI website output fails in one of two directions. It is either well behaved and forgettable, or it is a flashy scroll animation with 2.1:1 body text, a headline that wraps to six lines on a phone, and the same six sections every other AI page has. scrollcraft is built to fail neither way: it treats **interaction** and **craft** as one job rather than two.
+Use it with Codex, Claude Code, or another coding agent that can read instructions,
+edit files, run commands, and inspect a browser. The skill contains the design
+workflow, references, engine, and verification tools. It also ships as a Claude
+Code plugin for convenient installation.
+
+Most AI website output fails in one of two directions. It is either well behaved and forgettable, or it is a flashy scroll animation with 2.1:1 body text, a headline that wraps to six lines on a phone, and the same six sections every other AI page has. scroll-craft is built to fail neither way: it treats **interaction** and **craft** as one job rather than two.
 
 [![MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Agent skill](https://img.shields.io/badge/agent-skill-3b82f6.svg)](plugins/nateherk-design/skills/scroll-craft/SKILL.md)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](https://code.claude.com/docs/en/plugins)
 
 ---
+
+## New in 0.3.0: the approved ten-site standard
+
+The skill now includes the process behind ten approved immersive websites:
+AI Automation Society, PERKFORM, Glaido, Herkules Advisory, Serein, FORME,
+Pelagic, NOEMA, OFFGRID, and Afterhours.
+
+### See the worked examples in motion
+
+A 50-second walkthrough of several approved sites, showing their layered heroes,
+pointer response, and scroll transitions.
+
+https://github.com/user-attachments/assets/d193073b-5af9-45de-93ae-95bf7c6934d5
+
+- Plan independent depth planes, contact anchors, and opening/midpoint/exit states.
+- Use authentic brand assets and verified product details before generating imagery.
+- Choose photographic compositing or real 3D rendering to suit the subject.
+- Give each site its own navigation, information order, useful controls, and ending.
+- Art-direct phones separately and verify actual scroll frames, fallbacks, and packages.
+- Honor explicit creative delegation without forcing a redundant interview.
+
+Read the [worked examples and production workflow](plugins/nateherk-design/skills/scroll-craft/references/approved-collection.md)
+and the [hero-depth guide](plugins/nateherk-design/skills/scroll-craft/references/hero-depth.md).
+These examples describe design behavior; client assets and private form data are
+not bundled. The existing engine and video compatibility fixes are preserved.
 
 ## Three builds, three completely different pages
 
 Same skill, same engine, no shared skeleton. The differences below are not themes: they are different page grammars, different navigation models, different endings.
 
-### Orrery · a travel practice
-One unbroken world. The whole page is a single fixed stage: you fall into a handmade scale model of the Earth, land in Kyoto, cross to Patagonia and the Sahara, and rise back to the workbench you started on. No section boundaries anywhere.
+### [AI Automation Society](https://aiautomationsociety.ai) · an AI community
+A dark editorial landing for a 450,000-member community. One stat carries the whole promise, a live product surface rises into the frame, and the proof stacks under it as you fall down the page.
 
-![Orrery, a continuous-world scroll flight](media/orrery.webp)
+![AI Automation Society, a dark editorial community landing](media/ais.webp)
+
+### [Nate Herk](https://www.nateherk.com) · a creator portfolio
+High-key and bright, the opposite of the first. A lit-glass hero with the numbers up front, a portrait held in the light, and two clear next steps instead of a wall of links.
+
+![Nate Herk, a high-key lit-glass creator portfolio](media/nateherk.webp)
 
 ### PERKFORM · a protein coffee
 A filmic one-shot that hard-cuts to two full-bleed inverted grounds mid-page. Loud, product-forward, and the only one of the three that raises its voice.
 
 ![PERKFORM, a filmic one-shot product page](media/perkform.webp)
-
-### Fallowbank · a landscape design-build studio
-Quiet, documentary, restrained. Museum-label copy over real photography, and a close that is a line of running text rather than a button.
-
-![Fallowbank, a restrained documentary page](media/fallowbank.webp)
 
 ---
 
@@ -65,6 +96,31 @@ Then it writes a contact sheet, because a machine can prove a page works and can
 
 ## Install
 
+### Codex and other coding agents
+
+Clone or download this repository. The complete skill lives in
+[`plugins/nateherk-design/skills/scroll-craft/`](plugins/nateherk-design/skills/scroll-craft/).
+Keep that folder intact, including its references, scripts, templates, and engine.
+
+- **Codex:** copy the complete `scroll-craft` folder into your project's
+  `.agents/skills/` directory, then ask Codex to use the Scrollcraft skill.
+- **Other agents with skill support:** place the folder in the agent's documented
+  skill directory.
+- **Any coding agent with file access:** leave the repository in your workspace
+  and ask it to read and follow the skill directly:
+
+```text
+Read plugins/nateherk-design/skills/scroll-craft/SKILL.md and use it to build
+my website. Follow the referenced design and verification workflow.
+```
+
+Adjust the path if the repository is in a subfolder. Agents use their own tools
+for file access, shell commands, browser inspection, and user questions. The
+design workflow is shared; tool names and automatic skill discovery can differ.
+The ten-site rebuild documented here was built with Codex.
+
+### Claude Code plugin
+
 ```bash
 /plugin marketplace add nateherkai/scroll-craft
 ```
@@ -75,7 +131,7 @@ Then it writes a contact sheet, because a machine can prove a page works and can
 Then use it by describing what you want, or invoke it directly:
 
 ```
-/nateherk-design:scrollcraft
+/nateherk-design:scroll-craft
 ```
 
 If the install summary says `Run /reload-plugins to activate.`, run that.
@@ -88,10 +144,14 @@ claude --plugin-dir ./plugins/nateherk-design
 
 ## First run
 
+From this repository's root, run:
+
 ```bash
-node scripts/doctor.mjs              # preflight: says exactly what is missing
-node scripts/workspace.mjs --ensure  # creates your workspace and an empty registry
+node plugins/nateherk-design/skills/scroll-craft/scripts/doctor.mjs
+node plugins/nateherk-design/skills/scroll-craft/scripts/workspace.mjs --ensure
 ```
+
+If you installed the skill elsewhere, use that folder's `scripts/` path instead.
 
 Run `doctor` before anything else. The three most common setup faults all surface later as misleading errors otherwise: a stripped ffmpeg reports a missing filter as a syntax error in *your* command, a missing WebP muxer reports as a bad filename, and `playwright-core` resolves from the wrong directory.
 
@@ -120,9 +180,11 @@ Builds land in `<workspace>/builds/<name>/`; your registry is `<workspace>/FINGE
 
 ```
 plugins/nateherk-design/
-└── skills/scrollcraft/
-    ├── SKILL.md            the procedure: interview, grammar, score, build, verify
+└── skills/scroll-craft/
+    ├── SKILL.md            the procedure: brief, grammar, score, build, verify
     ├── references/
+    │   ├── approved-collection.md  the ten-site workflow and worked examples
+    │   ├── hero-depth.md   independent planes, contact anchors, mobile composition
     │   ├── uniqueness.md   eight page grammars, the signature move, the fingerprint gate
     │   ├── feel.md         the feeling curve, the engineered peak, the feel check
     │   ├── devices.md      nine scroll devices and the cue contract
@@ -137,7 +199,7 @@ plugins/nateherk-design/
     └── scripts/            doctor · workspace · kie · encode · serve · shoot · worldflight-assert
 ```
 
-[`CHANGELOG.md`](plugins/nateherk-design/skills/scrollcraft/CHANGELOG.md) is worth reading on its own: it records what broke on each build and the rule that came out of it, rather than a feature list.
+[`CHANGELOG.md`](plugins/nateherk-design/skills/scroll-craft/CHANGELOG.md) is worth reading on its own: it records what broke on each build and the rule that came out of it, rather than a feature list.
 
 ## The one rule that matters most
 

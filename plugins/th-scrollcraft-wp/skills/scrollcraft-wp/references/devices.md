@@ -334,6 +334,55 @@ layers is plenty; five is a diorama.
 Never put body copy on a parallax layer. Text the reader is trying to read
 should not move relative to the thing they are reading it against.
 
+
+### Layered scenes: where the premium feel actually comes from
+
+A flat page moves as one sheet. A layered page is a stack of cut-out planes
+that slide past each other, and the eye reads that differential motion as
+depth before it reads anything else. It is the single biggest difference
+between a page that feels built and one that feels assembled, and it is cheap:
+three transparent images and a scroll multiplier each.
+
+How to build a layered hero, measured from a reference premium site and
+proven on a live build:
+
+- **Plan the planes back to front.** A far ridge, a mid ridge, the product
+  (a device, a bottle, a card), then a foreground plane in front of the
+  product. The product sits between mid and front, so the foreground overtakes
+  it as the reader scrolls. That overtaking is the move.
+- **Small rate differences, not big ones.** The reference hero lags the far
+  plane 31% behind the page, the mid plane 17%, the product 20%, and the
+  foreground and the copy travel at exactly 1x. Adjacent planes differ by ten
+  to thirty percent. Anything larger stops reading as distance and starts
+  reading as things sliding around. Copy always rides at 1x.
+- **Shape the foreground for the product.** If the foreground plane is a
+  straight edge it covers the product's call to action within a few hundred
+  pixels of scroll. Cut it so it dips where the product is and rises at the
+  edges, and the reader keeps the button in view for two to three times as
+  long.
+- **Every plane is solid below its silhouette.** Cut-out art that fades to
+  transparent at the bottom lets the plane behind show through under it as the
+  planes separate. Fill each column solid from its first opaque pixel down.
+- **Fade the section floor.** Planes travel past the section's bottom edge and
+  get clipped there. A gradient to the page ground over the last 200 to 300px,
+  layered above every plane, hides the clip line at any scroll position.
+
+Three traps that have each cost a round of fixes:
+
+- A global `img { max-width: 100% }` shrinks an absolutely positioned plane to
+  the viewport on phones, so the mountains never show. Planes carry
+  `max-width: none` and a fixed pixel width.
+- A `transition: transform` on a plane (a reveal class, usually) eases every
+  per-frame scroll write over its duration. On a phone that reads as the
+  product lagging a full second behind the thumb. Parallaxed elements
+  transition opacity only.
+- Replacing a plane's art under the same filename ships nothing to a phone
+  that has the old bytes cached. New art gets a new name.
+
+The `data-sc-parallax` rate above and a raw scroll multiplier are the same
+tool in different units. What matters is the ratio between planes, not the
+absolute travel.
+
 ---
 
 ## 7. `count`: numbers that land
@@ -353,6 +402,34 @@ what makes it persuasive and what makes an invented one a liability. If the
 brand has no verified figure, there is no counter. Check the brand's rules
 first; several forbid this outright.
 
+**Numbers that tick up when they come into view.** The form above is scrubbed
+by act progress, so it only runs inside a pinned act. For a stat row in an
+ordinary flow section, put the same attribute on a counter that is not inside
+any `data-sc-act` and it fires once on entry instead, ticking from the first
+value to the second over `data-sc-count-ms` (default 1400):
+
+```html
+<div class="sc-stack" data-sc-in data-sc-stagger="80">
+  <p class="sc-display sc-display--lg"><span data-sc-count="0 450,000">0</span> members</p>
+  <p class="sc-display sc-display--lg"><span data-sc-count="0 953,000">0</span> subscribers</p>
+</div>
+```
+
+What makes it land rather than spin:
+
+- **Ease out, hard.** The tick runs a cubic ease-out, so most of the distance
+  goes by in the first third and the last digits settle slowly. A linear count
+  reads as a slot machine.
+- **1.2 to 1.8 seconds.** Under a second and the reader misses that it moved;
+  past two and they are waiting for a number they have already guessed.
+- **It fires at half visibility, once.** The observer waits until half the
+  element is on screen so the reader is looking at it when it starts, and it
+  never re-runs on the way back up.
+- **Pair it with the fade.** A counter inside a `data-sc-in` stack rises in with
+  its label and starts ticking as it arrives, which is the one-two that reads
+  as premium. The same numbers static on the page read as a spreadsheet.
+- **Reduced motion writes the final value.** No animation, no zero flash.
+
 **A concept, fictional or pre-launch brand has no verified figures, so it has no
 counters.** The device suits a SaaS or agency page and it will look good in the
 score table, which is exactly the trap: every number you could put in it would
@@ -369,16 +446,25 @@ document sections with a reveal-on-entry are the rest of the page.
 
 ```html
 <section class="sc-section">
-  <div class="sc-wrap sc-stack" data-sc-stagger="70">
+  <div class="sc-wrap sc-stack" data-sc-in data-sc-stagger="70">
     <h2 class="sc-display sc-display--md">What is actually in it</h2>
     <p class="sc-body">…</p>
   </div>
 </section>
 ```
 
-This fires **once**, on entry, via IntersectionObserver. Content that re-hides
-when the reader scrolls back up is a defect, not an effect. Stagger between 30
-and 80ms; longer feels slow.
+`data-sc-in` is what the engine watches; without it nothing fires and the
+stagger children stay hidden. This fires **once**, on entry, via
+IntersectionObserver. Content that re-hides when the reader scrolls back up is
+a defect, not an effect. Stagger between 30 and 80ms; longer feels slow.
+
+**What a premium fade-in is made of.** Opacity from 0 and a rise of about 14px
+over 620ms on an ease-out curve, children staggered so the eye is led down the
+stack in reading order, and the trigger set slightly inside the viewport
+(`-12%` bottom margin) so it fires when the reader is looking, not when the
+first pixel clears the fold. A fade with no rise reads as a loading glitch. A
+rise past 24px reads as a slide. Larger, slower, or bouncier is never more
+premium; the restraint is the signal.
 
 **A flow section directly after a pinned act takes reduced padding.** The pinned
 stage needs a full viewport to scroll off, and full `--sc-section` padding on

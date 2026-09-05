@@ -74,6 +74,17 @@ const page = await browser.newPage({
   reducedMotion: REDUCED ? "reduce" : "no-preference",
 });
 
+// Headless Chrome can still reach desktop-wide cursor APIs on Windows.
+// Install before navigation; synthetic in-page movement needs no native lock.
+await page.addInitScript(() => {
+  Element.prototype.requestPointerLock = function () {
+    return Promise.reject(new Error("Native pointer lock disabled during verification"));
+  };
+  Element.prototype.setPointerCapture = function () {};
+  Element.prototype.releasePointerCapture = function () {};
+  Document.prototype.exitPointerLock = function () {};
+});
+
 const consoleErrors = [];
 page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text()); });
 page.on("pageerror", (e) => consoleErrors.push(String(e)));

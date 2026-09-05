@@ -3,7 +3,7 @@
  * Plugin Name:       TH Scrollcraft
  * Plugin URI:        https://github.com/tobbynaish/scroll-craft-wp
  * Description:       Der Scrollcraft-Motor für WordPress-Blockthemes. Übersetzt Block-Metadaten in data-sc-Attribute, lädt Motor und Stildatei nur dort, wo sie gebraucht werden, und bringt die Bausteine als Patterns mit. Gebaut gegen OllieWP 1.6.1.
- * Version:           0.1.0
+ * Version:           0.2.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            Tobias Herold
@@ -11,9 +11,10 @@
  * License:           MIT
  * Text Domain:       th-scrollcraft
  *
- * Der Motor stammt von Nate Herk (nateherkai/scroll-craft, MIT) und ist
- * unverändert übernommen. Angepasst ist alles darum herum: das Laden, die
- * Attribut-Brücke, die Stildatei gegen theme.json und die Patterns.
+ * Der Motor stammt von Nate Herk (nateherkai/scroll-craft, MIT), übernommen bis
+ * auf die zwei Fehlerkorrekturen in MOTOR-PATCHES.md. Angepasst ist alles darum
+ * herum: das Laden, die Attribut-Brücke, die Stildatei gegen theme.json und die
+ * Patterns.
  *
  * Warum ein Plugin und nicht das Child-Theme: der Motor treibt Inhalte, und
  * Inhalte überleben einen Theme-Wechsel. Der Motor muss es auch.
@@ -23,7 +24,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TH_SCROLLCRAFT_VERSION', '0.1.0' );
+define( 'TH_SCROLLCRAFT_VERSION', '0.2.0' );
 define( 'TH_SCROLLCRAFT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TH_SCROLLCRAFT_URL', plugin_dir_url( __FILE__ ) );
 

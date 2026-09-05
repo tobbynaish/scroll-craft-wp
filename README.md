@@ -23,8 +23,10 @@ Schriften und Abstände aus `theme.json` erbt.**
 | `plugins/nateherk-design/` | Nates Original, unverändert. Referenz beim Abgleich mit dem Upstream |
 | `README-upstream.md` | Nates ursprüngliche Anleitung |
 
-Der Motor selbst (`scrollcraft.js`, 1167 Zeilen) ist **unverändert**. Verändert
-ist alles darum herum.
+Der Motor selbst (`scrollcraft.js`, 1211 Zeilen) ist bis auf zwei
+Fehlerkorrekturen **unverändert**, nachzulesen in
+[`MOTOR-PATCHES.md`](wp-plugin/th-scrollcraft/MOTOR-PATCHES.md). Verändert ist
+alles darum herum.
 
 ## Die vier Anpassungen
 

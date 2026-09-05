@@ -1,5 +1,9 @@
 # Verify
 
+For the approved collection’s functional, fallback, and deployment acceptance
+procedure, also read [approved-collection.md §7](approved-collection.md#7-require-visual-and-functional-evidence-before-delivery). Test the final files, preserve
+failed evidence, and identify the rerun that resolves each finding.
+
 A scroll page cannot be checked by looking at it. It has no single state: every
 scroll position is a different frame, and the failures live between the two you
 happened to look at. So walk it mechanically.

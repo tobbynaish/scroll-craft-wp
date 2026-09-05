@@ -20,7 +20,7 @@
       "name": "nateherk-design",
       "source": "./plugins/nateherk-design",
       "description": "Das unveraenderte Original von Nate Herk, fuer Seiten ausserhalb von WordPress und als Referenz beim Abgleich mit dem Upstream.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "Nate Herk"
       },

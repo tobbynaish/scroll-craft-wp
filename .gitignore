@@ -3,7 +3,7 @@
 .env.local
 *.key
 
-# Build output. These get very large very fast: a single scrollcraft build with
+# Build output. These get very large very fast: a single scroll-craft build with
 # ten video legs is 300MB+, and a working lab directory reached 12GB locally.
 # Committing them once puts them in history permanently.
 builds/

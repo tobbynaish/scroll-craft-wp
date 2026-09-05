@@ -64,6 +64,7 @@ const TH_SC_KEYS = array(
 	'reveal-at'  => 'nums',
 	'count'      => 'nums',
 	'count-at'   => 'nums',
+	'count-ms'   => 'num',
 	'in'         => 'flag',
 	'stagger'    => 'num',
 	'progress'   => 'flag',

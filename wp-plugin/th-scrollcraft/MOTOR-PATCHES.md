@@ -6,8 +6,18 @@ Was eine Seite braucht, wird über `data-sc-*` und eigenes JavaScript in der
 Seite gelöst, nicht im Motor.
 
 Ausnahme sind Fehler im Motor selbst. Die stehen hier, damit ein späterer
-Abgleich mit dem Original weiß, was von uns ist. Jeder Patch trägt im Code
-einen Block `====== th-scrollcraft ======` mit derselben Nummer.
+Abgleich mit dem Original weiß, was von uns ist. Jeder Patch steht im Code in
+einem Block, der mit `th-scrollcraft ==` am Zeilenende geöffnet und mit `==== */`
+geschlossen wird, dazwischen die Nummer. Der Grep dafür lautet:
+
+```bash
+grep -n "th-scrollcraft ==" assets/scrollcraft.js   # muss 2 Treffer geben
+```
+
+**Abgleichstand: `upstream/main` bei `0b81622`, geprüft am 2026-09-05.** Beide
+Patches sind dort weiterhin nötig, `scroll-craft#1` ist offen. Nates Änderung in
+v0.3.0 ist rein additiv (Counter beim Erscheinen) und berührt keine der
+Patch-Stellen.
 
 | Nr | Was | Warum | Fällt weg wenn |
 |---|---|---|---|
@@ -55,9 +65,36 @@ der Konsole auf einer Seite, auf der nichts falsch geschrieben war.
 
 ```bash
 git fetch upstream
-git diff upstream/main -- plugins/nateherk-design/skills/scrollcraft/engine/scrollcraft.js
+git diff upstream/main -- plugins/nateherk-design/skills/scroll-craft/engine/scrollcraft.js
 ```
 
 `plugins/nateherk-design/` bleibt immer der unveränderte Stand. Wer den Motor
 neu übernimmt, kopiert von dort nach `wp-plugin/th-scrollcraft/assets/` und
 trägt die Patches aus dieser Liste erneut ein, sofern sie noch nötig sind.
+
+Die Patches von Hand abzutippen ist der fehleranfällige Weg, sie sind zu 87
+Zeilen überwiegend Kommentar. Besser als Diff gegen den alten Original-Stand
+sichern und auf die neue Fassung auftragen:
+
+```bash
+git show <alter-abgleichstand>:plugins/nateherk-design/skills/scroll-craft/engine/scrollcraft.js > /tmp/orig_alt.js
+diff -u /tmp/orig_alt.js assets/scrollcraft.js > /tmp/th-patches.diff   # muss 4 Hunks, 87 Zeilen sein
+cp ../../plugins/nateherk-design/skills/scroll-craft/engine/scrollcraft.js assets/scrollcraft.js
+patch assets/scrollcraft.js < /tmp/th-patches.diff
+```
+
+Danach muss `diff` zwischen neuem Original und `assets/scrollcraft.js` wieder
+genau diese vier Hunks zeigen und sonst nichts. Zeigt er mehr, ist der Patch
+verrutscht.
+
+**`assets/scrollcraft.css` wird dabei nie mitkopiert.** Sie sieht aus wie die
+Schwesterdatei zur Engine und ist es nicht: sie ist eine eigene Fassung gegen
+`theme.json`, ohne globalen Reset, mit Tokens auf `var(--wp--preset--*)` und der
+Sticky-Rettung für `.wp-site-blocks`. Nates `engine/scrollcraft.css` darüber zu
+kopieren wirft all das weg, und weil beide Dateien gleich heißen und die Seite
+danach noch scrollt, fällt es erst beim Blick auf die Farben auf. Beim Abgleich
+am 2026-09-05 genau so passiert. Der Vergleich, der es zeigt:
+
+```bash
+grep -c "wp--preset" assets/scrollcraft.css   # muss 34 sein, nicht 0
+```
