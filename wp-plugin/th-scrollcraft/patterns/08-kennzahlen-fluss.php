@@ -29,6 +29,12 @@
  * Die Dauer steht an jedem Zähler einzeln über countMs. Ohne den Wert sind es
  * 1400ms. Unter einer Sekunde bemerkt niemand die Bewegung, über zwei wartet
  * man auf eine Zahl, die man längst gelesen hat.
+ *
+ * Beide Fallen findet zaehler-probe.mjs aus dem Skill, weil es nach dem Zählen
+ * wieder hochscrollt: ein Zähler beim Erscheinen bleibt stehen, ein am Akt
+ * hängender fällt auf den Startwert zurück.
+ *
+ *   node <skill>/scripts/zaehler-probe.mjs --url "https://.../SEITE/?bypass_code=CODE"
  */
 
 defined( 'ABSPATH' ) || exit;

@@ -371,6 +371,14 @@ Ohne `playwright-core` beantwortet `scripts/probe.mjs` wenigstens die
 wichtigste Frage, ob Scroll jeden Akt wirklich bewegt. Es spricht ein
 installiertes Chrome direkt an und braucht kein Paket.
 
+Zähler **außerhalb** eines Aktes prüft keines von beiden, weil sie nicht am
+Scroll hängen, sondern einmal beim Erscheinen ticken. Dafür
+`scripts/zaehler-probe.mjs`, ebenfalls ohne Paket:
+
+```bash
+node <skill>/scripts/zaehler-probe.mjs --url "https://staging.DOMAIN.de/SEITE/?bypass_code=CODE"
+```
+
 **Drei Hostinger-Fallen, ohne die diese Phase falsche Ergebnisse liefert:**
 
 - Der Bot-Schutz gibt `curl` und externen Messdiensten 403. Playwright kommt

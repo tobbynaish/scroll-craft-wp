@@ -254,6 +254,35 @@ schlicht nicht, jede Messung meldet Fortschritt 0, und das sieht aus wie eine
 kaputte Seite. Wer in einem eingebetteten Browser prüft, muss das Fenster
 sichtbar haben.
 
+**Dasselbe Fenster tötet auch jeden `IntersectionObserver`.** Bei
+`document.visibilityState === "hidden"` liefert Chromium keine Rückrufe, und
+zwar auch für einen Observer, den man selbst gerade erst angelegt hat. Betroffen
+sind `data-sc-in` und der Zähler beim Erscheinen: beide brauchen kein rAF, sie
+hängen allein am Observer. Die Folge sieht schlimmer aus als totes Scroll,
+nämlich nach fehlendem Inhalt, weil `[data-sc-in]` auf `opacity: 0` stehen
+bleibt. Wer das sieht, prüft zuerst `document.visibilityState`, bevor er den
+Fehler im Markup sucht.
+
+### Zähler beim Erscheinen
+
+`probe.mjs` prüft Akte. Ein `data-sc-count` **außerhalb** jedes Aktes ist kein
+Akt und taucht dort nicht auf, deshalb gibt es dafür `scripts/zaehler-probe.mjs`.
+
+```bash
+node <skill>/scripts/zaehler-probe.mjs --url "https://staging.DOMAIN.de/SEITE/?bypass_code=CODE" --shot lab/zaehler.png
+```
+
+Es scrollt den ersten Zähler mittig ins Bild, tastet den Verlauf über 2,5
+Sekunden ab und scrollt danach wieder hoch. Die Gegenprobe ist der eigentliche
+Punkt: **ein Zähler beim Erscheinen bleibt stehen, ein am Akt hängender fällt
+beim Hochscrollen auf den Startwert zurück.** Nur so unterscheidet man die
+beiden Sorten, im Standbild sehen sie gleich aus.
+
+Rückgabewerte: 0 grün oder nichts zu prüfen, 1 wenn ein Zähler sein Ziel nicht
+erreicht, zurückfällt oder erneut feuert, 2 wenn die Seite gar kein Scrollcraft
+nutzt. Zielwerte ab 10000 quittiert es mit einer Warnung, weil `formatNum()`
+englisch rechnet und dort Kommas setzt: aus 12500 wird `12,500` statt `12.500`.
+
 **Ein zweiter Stolperstein bei jeder Messung von Hand:** die Stildatei setzt
 `scroll-behavior: smooth`. Ein `scrollTo(0, y)` läuft dann animiert, und wer
 100 Millisekunden später misst, misst die alte Position. Immer
